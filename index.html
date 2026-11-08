@@ -2,61 +2,68 @@
 <html lang="el"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TG Πρόβλεψη</title><meta name="robots" content="noindex,nofollow">
 <style>
-:root{--bg:#0b0f17;--card:#121826;--line:#1f2937;--tx:#e6edf6;--mut:#8b98ab;--up:#19c37d;--dn:#ef4444;--acc:#3b82f6;--warn:#f59e0b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}
-.wrap{max-width:1100px;margin:0 auto;padding:16px}
-h1{font-size:20px;margin:0}.mut{color:var(--mut)}.sm{font-size:12.5px}
-.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-.tabs{display:flex;gap:6px}.tab{background:var(--card);border:1px solid var(--line);color:var(--tx);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600}
-.tab.on{background:var(--acc);border-color:var(--acc)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
-.warn{border-color:#5b4310;background:#1d170a}
-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
-th{color:var(--mut);font-weight:600;font-size:12.5px}td:first-child,th:first-child{text-align:left}
-.up{color:var(--up)}.dn{color:var(--dn)}.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-weight:700;font-size:12.5px}
-.pup{background:rgba(25,195,125,.15);color:var(--up)}.pdn{background:rgba(239,68,68,.15);color:var(--dn)}.pn{background:#1f2937;color:var(--mut)}
-.bar{height:6px;border-radius:3px;background:#1f2937;position:relative;min-width:70px}.bar i{position:absolute;top:0;bottom:0;border-radius:3px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.kpi b{display:block;font-size:20px}
-.scroll{overflow-x:auto}#gate{max-width:420px;margin:12vh auto}input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0e1420;color:var(--tx);font-size:16px}
-button.go{margin-top:10px;width:100%;padding:12px;border-radius:10px;border:0;background:var(--acc);color:#fff;font-weight:700;font-size:16px}
-.dim{opacity:.45}
+:root{--bg:#070b14;--card:#0f1522;--line:#1c2535;--tx:#e8eef7;--mut:#8592a6;--up:#22c55e;--dn:#ef4444;--acc:#3b82f6;--warn:#f5b301}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}
+.wrap{max-width:1320px;margin:0 auto;padding:14px 16px 30px}
+.mut{color:var(--mut)}.sm{font-size:12px}.up{color:var(--up)}.dn{color:var(--dn)}.wa{color:var(--warn)}
+header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.logo{font-size:21px;font-weight:800;letter-spacing:-.3px}.logo b{color:var(--acc)}
+.btn{background:var(--card);border:1px solid var(--line);color:var(--tx);padding:7px 13px;border-radius:9px;font-weight:650;font-size:13px;cursor:pointer}
+.btn.on{background:var(--acc);border-color:var(--acc)}select.btn{appearance:none;padding-right:26px;background-image:linear-gradient(45deg,transparent 50%,#8592a6 50%),linear-gradient(135deg,#8592a6 50%,transparent 50%);background-position:calc(100% - 14px) 52%,calc(100% - 9px) 52%;background-size:5px 5px;background-repeat:no-repeat}
+.badge{margin-left:auto;border:1px solid #6b5410;background:#1e1808;color:var(--warn);padding:6px 11px;border-radius:9px;font-size:12px;font-weight:650}
+.grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px}@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.h{font-size:11px;letter-spacing:1.4px;color:var(--mut);font-weight:700;text-transform:uppercase;margin:0 0 10px}
+.cards4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}@media(max-width:640px){.cards4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.k{background:#0b111c;border:1px solid var(--line);border-radius:12px;padding:12px}.k .t{font-size:12px;color:var(--mut)}.k .v{font-size:26px;font-weight:800;margin:4px 0}
+.k.sig{border-color:#1f6b3d}.k.sigd{border-color:#7a2626}
+.pb{height:8px;border-radius:4px;background:var(--dn);overflow:hidden;margin:6px 0}.pb i{display:block;height:100%;background:var(--up)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);gap:10px}.row:last-child{border-bottom:0}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-weight:700;font-size:12px;white-space:nowrap}.pup{background:rgba(34,197,94,.14);color:var(--up)}.pdn{background:rgba(239,68,68,.14);color:var(--dn)}.pn{background:#1c2535;color:var(--mut)}.pw{background:#2a2108;color:var(--warn)}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}th,td{padding:6px 5px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{color:var(--mut);font-weight:650;font-size:11.5px}td:first-child,th:first-child{text-align:left}
+tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#14203a}
+.why{display:grid;grid-template-columns:minmax(120px,1.1fr) 2fr 56px;gap:8px;align-items:center;padding:5px 0}.why .b{height:9px;background:#141c2a;border-radius:5px;position:relative}.why .b i{position:absolute;top:0;bottom:0;border-radius:5px}.why .b:after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:#2b3a52}
+.scroll{overflow-x:auto}svg text{font:11px -apple-system,Inter,sans-serif;fill:#8592a6}
+#gate{max-width:420px;margin:12vh auto}input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0b111c;color:var(--tx);font-size:16px}
+.go{margin-top:10px;width:100%;padding:12px;border-radius:10px;border:0;background:var(--acc);color:#fff;font-weight:700;font-size:16px}
+.note{border:1px solid #6b5410;background:#1e1808;color:#f1d48a;border-radius:10px;padding:9px 12px;font-size:12.5px;margin-bottom:10px}
 </style></head><body><div class="wrap">
-<div id="gate" class="card"><h1>TG Πρόβλεψη</h1><p class="mut">Γράψε τον κωδικό για να ξεκλειδώσει το μοντέλο σε αυτή τη συσκευή.</p>
+<div id="gate" class="card"><div class="logo">Trading<b>Gym</b> · Πρόβλεψη</div><p class="mut">Γράψε τον κωδικό για να ξεκλειδώσει το μοντέλο σε αυτή τη συσκευή.</p>
 <input id="pw" type="password" autocomplete="current-password" placeholder="Κωδικός"><button class="go" id="unlock">Άνοιγμα</button><p id="gmsg" class="sm mut"></p></div>
 <div id="app" style="display:none">
-<div class="top"><div><h1>TG Πρόβλεψη</h1><div class="sm mut" id="status">—</div></div>
-<div class="tabs" id="tabs"></div></div>
-<div id="note"></div>
-<div class="card" id="now"></div>
-<div class="card scroll" id="tbl"></div>
-<div class="card" id="shadow"></div>
+<header><div class="logo">Trading<b>Gym</b> · Πρόβλεψη</div><select id="sym" class="btn"></select><div id="tabs" style="display:flex;gap:6px"></div><div class="btn" id="cd">⏱ —</div><div class="badge" id="badge">ΠΕΙΡΑΜΑΤΙΚΟ · σε σκιώδη έλεγχο</div></header>
+<div class="sm mut" id="status" style="margin:-6px 0 12px">—</div>
+<div id="notes"></div>
+<div class="grid"><div>
+ <div class="card"><div class="h" id="chh">Γράφημα</div><div id="chart"></div></div>
+ <div class="card"><div class="h" id="prh">Πρόβλεψη</div><div class="cards4" id="pred"></div></div>
+ <div class="card"><div class="h">Γιατί · οι παράγοντες που μέτρησαν τώρα</div><div id="why"></div><p class="sm mut" style="margin:8px 0 0">Πόσο έσπρωξε κάθε ομάδα δεικτών την πρόβλεψη (πράσινο: προς άνοδο, κόκκινο: προς πτώση). Υπολογίζεται από τα ίδια τα δέντρα του μοντέλου.</p></div>
+</div><div>
+ <div class="card"><div class="h">Καθεστώς αγοράς</div><div id="regime"></div></div>
+ <div class="card"><div class="h" id="rsh">Σχετική δύναμη</div><div class="scroll" id="rs"></div></div>
+ <div class="card"><div class="h">Πίνακας επιτυχίας · live (δεδομένα που δεν είδε)</div><div class="scroll" id="score"></div></div>
+</div></div>
+<div class="card"><div class="h" id="shh">Σκιώδης λογαριασμός</div><div id="shadow"></div></div>
 <p class="sm mut">Πειραματικό εργαλείο για προσωπική χρήση. Πιθανότητες από μοντέλο, όχι βεβαιότητες. Στόχος/stop = ±1 ATR, λήξη μετά από Ν κεριά. Κόστη 8 bp ανά trade στα «καθαρά».</p>
 </div></div>
 <script src="features.js"></script>
 <script>
 const SYMS=["AAVEUSDT","ADAUSDT","AVAXUSDT","BCHUSDT","BNBUSDT","BTCUSDT","DOGEUSDT","DOTUSDT","ETHUSDT","HYPEUSDT","LINKUSDT","LTCUSDT","NEARUSDT","PUMPUSDT","RUNEUSDT","SOLUSDT","SUIUSDT","TONUSDT","TRXUSDT","XAUUSDT","XMRUSDT","XRPUSDT","ZECUSDT"];
-const TFS={"15m":{lab:"15'",ms:9e5,only:["BTCUSDT","ETHUSDT","SOLUSDT"]},"1h":{lab:"1H",ms:36e5},"4h":{lab:"4H",ms:144e5,oi:true},"1d":{lab:"1D",ms:864e5}};
+const TFS={"15m":{lab:"15'",ms:9e5,only:["BTCUSDT","ETHUSDT","SOLUSDT"],h:"4 ώρες"},"1h":{lab:"1H",ms:36e5,h:"12 ώρες"},"4h":{lab:"4H",ms:144e5,oi:true,h:"24 ώρες"},"1d":{lab:"1D",ms:864e5,h:"5 μέρες"}};
+const RQ={"15m":[-4.59,4.51],"1h":[-3.92,3.98],"4h":[-2.7,2.78],"1d":[-2.34,2.59]};
+const EXP={"15m":6,"1h":17.6,"4h":20.4,"1d":50.8};
 const THR=0.65, FEE=8, API="https://fapi.binance.com";
+const GROUPS=[["Ορμή (κίνηση τιμής)",/^r\d+$/],["Θέση στο εύρος / τάση",/^(pos|ema)\d+$/],["Μεταβλητότητα",/^(vol16|vol64|volr|rng|atrp)$/],["Σχήμα κεριού",/^(body|wick_up|wick_dn)$/],["Όγκος / delta",/^(vz|tb|tb8|cvd16|cvd64)$/],["Funding",/^fund$/],["OI / θέσεις traders",/^(oi_|ttp|tta|gl|tt_vs|taker|mkt_oi)/],["Τι κάνει το BTC",/^btc_/],["Όλη η αγορά (breadth)",/^(breadth|up_share|rs16|rs_rank)/],["Ώρα / μέρα",/^(hr|dow)$/],["Χαρακτήρας νομίσματος",/^sym_id$/]];
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-let MODELS=null, cur=ls.get("tg.tf")||"4h"; const CACHE={};
-const $=id=>document.getElementById(id);
+let MODELS=null,cur=ls.get("tg.tf")||"4h",sel=ls.get("tg.sym")||"BTCUSDT";const CACHE={};const $=id=>document.getElementById(id);
 // ---------- unlock ----------
-async function decrypt(pw){
-  const enc=await (await fetch("models.enc",{cache:"no-cache"})).json();
-  const b=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function decrypt(pw){const enc=await (await fetch("models.enc",{cache:"no-cache"})).json();const b=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
   const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
   const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b(enc.salt),iterations:enc.iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
   const raw=await crypto.subtle.decrypt({name:"AES-GCM",iv:b(enc.iv)},key,b(enc.data));
-  const txt=await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
-  return JSON.parse(txt);
-}
-async function unlock(pw,silent){
-  $("gmsg").textContent="Ξεκλείδωμα…";
-  try{MODELS=await decrypt(pw);ls.set("tg.k",pw);$("gate").style.display="none";$("app").style.display="";start()}
-  catch(e){$("gmsg").textContent=silent?"":"Λάθος κωδικός ή πρόβλημα φόρτωσης.";}
-}
-$("unlock").onclick=()=>unlock($("pw").value);$("pw").onkeydown=e=>{if(e.key==="Enter")unlock($("pw").value)};
-if(ls.get("tg.k"))unlock(ls.get("tg.k"),true);
+  return JSON.parse(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"))).text())}
+async function unlock(pw,silent){$("gmsg").textContent="Ξεκλείδωμα…";try{MODELS=await decrypt(pw);ls.set("tg.k",pw);$("gate").style.display="none";$("app").style.display="";start()}catch(e){$("gmsg").textContent=silent?"":"Λάθος κωδικός ή πρόβλημα φόρτωσης."}}
+$("unlock").onclick=()=>unlock($("pw").value);$("pw").onkeydown=e=>{if(e.key==="Enter")unlock($("pw").value)};if(ls.get("tg.k"))unlock(ls.get("tg.k"),true);
 // ---------- data ----------
 async function j(url){for(let a=0;a<2;a++){try{const r=await fetch(url);if(r.ok)return await r.json()}catch(e){}await new Promise(r=>setTimeout(r,600))}throw new Error(url)}
 async function pool(items,n,fn){const out=new Array(items.length);let i=0;await Promise.all(Array.from({length:n},async()=>{while(i<items.length){const k=i++;try{out[k]=await fn(items[k])}catch(e){out[k]=null}}}));return out}
@@ -66,59 +73,96 @@ const FUND={};async function funding(s){if(FUND[s]&&Date.now()-FUND[s].at<36e5)r
 async function oiData(s){const q=`symbol=${s}&period=4h&limit=500`;
   const [oi,tp,ta,gl]=await Promise.all([j(`${API}/futures/data/openInterestHist?${q}`),j(`${API}/futures/data/topLongShortPositionRatio?${q}`),j(`${API}/futures/data/topLongShortAccountRatio?${q}`),j(`${API}/futures/data/globalLongShortAccountRatio?${q}`)]);
   let tk=[];let end=Date.now();for(let p=0;p<2;p++){const a=await j(`${API}/futures/data/takerlongshortRatio?symbol=${s}&period=5m&limit=500&endTime=${end}`);if(!a.length)break;tk=a.concat(tk);end=+a[0].timestamp-1}
-  const m=(arr,key)=>{const M=new Map(arr.map(x=>[+x.timestamp,+x[key]]));return M};
-  const ts=oi.map(x=>+x.timestamp);const P=m(tp,"longShortRatio"),A=m(ta,"longShortRatio"),G=m(gl,"longShortRatio");
-  tk.sort((a,b)=>a.timestamp-b.timestamp);
+  const m=arr=>new Map(arr.map(x=>[+x.timestamp,+x.longShortRatio]));const ts=oi.map(x=>+x.timestamp);const P=m(tp),A=m(ta),G=m(gl);tk.sort((a,b)=>a.timestamp-b.timestamp);
   return{ts,oiv:oi.map(x=>+x.sumOpenInterestValue),ttp:ts.map(t=>P.get(t)??NaN),tta:ts.map(t=>A.get(t)??NaN),gl:ts.map(t=>G.get(t)??NaN),tkts:tk.map(x=>+x.timestamp),tkv:tk.map(x=>+x.buySellRatio)}}
 // ---------- model ----------
-function predict(M,x){const ci=M.features.indexOf('sym_id');const code=M.catmap.indexOf(x[ci]|0);const z=[code<0?NaN:code];for(let k=0;k<x.length;k++)if(k!==ci)z.push(x[k]);
-  let s=M.base;for(const T of M.trees){let i=0;while(!T.leaf[i]){const v=z[T.f[i]];let left;if(v===null||v===undefined||Number.isNaN(v))left=T.ml[i]===1;else if(T.c[i]){const c=v|0,bs=T.bs[T.b[i]];left=((bs[c>>5]>>>(c&31))&1)===1}else left=v<=T.t[i];i=left?T.l[i]:T.r[i]}s+=T.v[i]}return 1/(1+Math.exp(-s))}
-function outcome(b,i,atr,N,k){const c=b.c[i],up=c+k*atr,dn=c-k*atr;for(let j=1;j<=N;j++){if(i+j>=b.t.length)return null;const hu=b.h[i+j]>=up,hd=b.l[i+j]<=dn;if(hu&&hd)return{r:NaN,how:"both",j};if(hu)return{r:k*atr/c,how:"up",j};if(hd)return{r:-k*atr/c,how:"dn",j}}return{r:Math.log(b.c[i+N]/c),how:"exp",j:N}}
+function zvec(M,x){const ci=M.features.indexOf('sym_id');const code=M.catmap.indexOf(x[ci]|0);const z=[code<0?NaN:code];for(let k=0;k<x.length;k++)if(k!==ci)z.push(x[k]);return z}
+function znames(M){const ci=M.features.indexOf('sym_id');return ['sym_id'].concat(M.features.filter((_,k)=>k!==ci))}
+function walk(M,z,contrib){let s=M.base;for(const T of M.trees){let i=0;while(!T.leaf[i]){const v=z[T.f[i]];let left;if(v===null||v===undefined||Number.isNaN(v))left=T.ml[i]===1;else if(T.c[i]){const c=v|0,bs=T.bs[T.b[i]];left=((bs[c>>5]>>>(c&31))&1)===1}else left=v<=T.t[i];
+  const nx=left?T.l[i]:T.r[i];if(contrib)contrib[T.f[i]]=(contrib[T.f[i]]||0)+T.v[nx]-T.v[i];i=nx}s+=T.v[i]}return s}
+const sig_=s=>1/(1+Math.exp(-s));const predict=(M,x)=>sig_(walk(M,zvec(M,x)));
+function outcome(b,i,atr,N,k){const c=b.c[i],up=c+k*atr,dn=c-k*atr;for(let j=1;j<=N;j++){if(i+j>=b.t.length)return null;const hu=b.h[i+j]>=up,hd=b.l[i+j]<=dn;if(hu&&hd)return{r:NaN,how:"both"};if(hu)return{r:k*atr/c,how:"up"};if(hd)return{r:-k*atr/c,how:"dn"}}return{r:Math.log(b.c[i+N]/c),how:"exp"}}
 async function load(tf){
-  const M=MODELS[tf],cfg=TFS[tf];$("status").textContent="Φόρτωση δεδομένων "+cfg.lab+"…";
-  const ks=await pool(SYMS,6,s=>klines(s,tf));const fs=await pool(SYMS,6,funding);
-  const ois=cfg.oi?await pool(SYMS,3,oiData):SYMS.map(()=>null);
-  const all={};let latest=0;SYMS.forEach((s,i)=>{const b=ks[i];if(!b||b.t.length<450)return;latest=Math.max(latest,b.t[b.t.length-1])});
-  SYMS.forEach((s,i)=>{const b=ks[i];if(!b||b.t.length<450)return;if(b.t[b.t.length-1]<latest-cfg.ms)return; // stale/delisted
-    const X=TGF.symFeatures(b,fs[i],ois[i],tf);all[s]={b,X,idx:new Map(b.t.map((t,k)=>[t,k]))}});
-  const cut=Date.parse(M.trained_to.replace(" ","T")+"Z");
-  const times=all.BTCUSDT.b.t.filter(t=>t>cut);const hist=[];const rows=[];
-  for(const t of times){const cr=TGF.crossAt(all,SYMS,t,!!cfg.oi);for(const s in cr){const A=all[s],i=A.idx.get(t);if(i<420)continue;const atr=A.X._atr[i];if(!(atr>0)||!(A.b.v[i]>0))continue;const p=predict(M,TGF.vector(M,A.X,i,cr[s]));
-     const sig=p>=THR?1:p<=1-THR?-1:0;
-      if(t===latest)rows.push({s,p,sig,c:A.b.c[i],atr,t});
-      if(sig&&(!cfg.only||cfg.only.includes(s))){const o=outcome(A.b,i,atr,M.N,M.k);if(o&&o.how==="both")o.r=-sig*M.k*atr/A.b.c[i];hist.push({s,t,sig,p,c:A.b.c[i],o})}}}
-  CACHE[tf]={rows,hist,latest,at:Date.now(),missing:SYMS.filter(s=>!all[s])};
+  const M=MODELS[tf],cfg=TFS[tf];if(tf===cur)$("status").textContent="Φόρτωση δεδομένων "+cfg.lab+"…";
+  const ks=await pool(SYMS,6,s=>klines(s,tf));const fs=await pool(SYMS,6,funding);const ois=cfg.oi?await pool(SYMS,3,oiData):SYMS.map(()=>null);
+  const all={};let latest=0;SYMS.forEach((s,i)=>{const b=ks[i];if(b&&b.t.length>=450)latest=Math.max(latest,b.t[b.t.length-1])});
+  SYMS.forEach((s,i)=>{const b=ks[i];if(!b||b.t.length<450||b.t[b.t.length-1]<latest-cfg.ms)return;all[s]={b,X:TGF.symFeatures(b,fs[i],ois[i],tf),idx:new Map(b.t.map((t,k)=>[t,k]))}});
+  const cut=Date.parse(M.trained_to.replace(" ","T")+"Z");const times=all.BTCUSDT.b.t.filter(t=>t>cut);const hist=[];const rows={};let nAll=0,upAll=0,inb=0,nb=0;
+  for(const t of times){const cr=TGF.crossAt(all,SYMS,t,!!cfg.oi);for(const s in cr){const A=all[s],i=A.idx.get(t);if(i<420)continue;const atr=A.X._atr[i];if(!(atr>0)||!(A.b.v[i]>0))continue;
+    const x=TGF.vector(M,A.X,i,cr[s]);const p=predict(M,x);const sg=p>=THR?1:p<=1-THR?-1:0;const use=!cfg.only||cfg.only.includes(s);
+    if(t===latest)rows[s]={s,p,sig:sg,c:A.b.c[i],atr,x,cr:cr[s],i};
+    if(use){const o=outcome(A.b,i,atr,M.N,M.k);if(o){if(o.how==="up"||o.how==="dn"){nAll++;if(o.how==="up")upAll++}
+        if(i+M.N<A.b.t.length){nb++;const z=Math.log(A.b.c[i+M.N]/A.b.c[i])/(atr/A.b.c[i]);if(z>=RQ[tf][0]&&z<=RQ[tf][1])inb++}}
+      if(sg){if(o&&o.how==="both")o.r=-sg*M.k*atr/A.b.c[i];hist.push({s,t,sig:sg,p,c:A.b.c[i],atr,o})}}}}
+  CACHE[tf]={rows,hist,latest,all,at:Date.now(),missing:SYMS.filter(s=>!all[s]),base:nAll?Math.max(upAll,nAll-upAll)/nAll:NaN,cover:nb?inb/nb:NaN};
 }
 // ---------- render ----------
-const fmt=(x,d)=>x>=1000?x.toLocaleString("el-GR",{maximumFractionDigits:d??1}):x>=1?x.toFixed(d??3):x.toPrecision(4);
-const tstr=t=>new Date(t).toLocaleString("el-GR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+const fmt=x=>!isFinite(x)?"—":x>=1000?x.toLocaleString("el-GR",{maximumFractionDigits:1}):x>=1?x.toFixed(3):x.toPrecision(4);
+const tstr=t=>new Date(t).toLocaleString("el-GR",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+const nm=s=>s.replace("USDT","");const pct=x=>Math.round(x*100)+"%";
+function isWeekend(t){const d=new Date(t).getUTCDay();const h=new Date(t).getUTCHours();return d===6||(d===0&&h<22)||(d===5&&h>=21)}
+function stats(H){H=H.filter(h=>h.o);const n=H.length;if(!n)return{n:0};const R=H.map(h=>h.sig*h.o.r/(h.atr/h.c));const bp=H.map(h=>h.sig*h.o.r*1e4);
+  return{n,win:R.filter(x=>x>0).length/n,avg:bp.reduce((a,b)=>a+b,0)/n,R:R.reduce((a,b)=>a+b,0),net:bp.reduce((a,b)=>a+b-FEE,0)}}
+function chart(C,r){const A=C.all[sel];if(!A||!r){$("chart").innerHTML='<p class="mut">Δεν υπάρχουν δεδομένα για αυτό το σύμβολο.</p>';return}
+  const M=MODELS[cur],n=60,b=A.b,i0=Math.max(0,b.t.length-n),W=760,H=300,pad=46,fut=Math.max(6,Math.round(n*0.22));
+  const lo=r.c+RQ[cur][0]*r.atr,hi=r.c+RQ[cur][1]*r.atr;let mn=Math.min(lo,...b.l.slice(i0)),mx=Math.max(hi,...b.h.slice(i0));const sp=(mx-mn)*0.06;mn-=sp;mx+=sp;
+  const cw=(W-pad-10)/(n+fut),X=k=>10+k*cw+cw/2,Y=v=>H-18-(v-mn)/(mx-mn)*(H-30);let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="height:300px">`;
+  for(let g=0;g<5;g++){const v=mn+(mx-mn)*g/4;s+=`<line x1="10" x2="${W-pad}" y1="${Y(v)}" y2="${Y(v)}" stroke="#16202f"/><text x="${W-pad+4}" y="${Y(v)+4}">${fmt(v)}</text>`}
+  for(let k=0;k<b.t.length-i0;k++){const i=i0+k,up=b.c[i]>=b.o[i],col=up?"#22c55e":"#ef4444";s+=`<line x1="${X(k)}" x2="${X(k)}" y1="${Y(b.h[i])}" y2="${Y(b.l[i])}" stroke="${col}"/><rect x="${X(k)-cw*0.32}" width="${cw*0.64}" y="${Y(Math.max(b.o[i],b.c[i]))}" height="${Math.max(1,Math.abs(Y(b.o[i])-Y(b.c[i])))}" fill="${col}"/>`}
+  const xs=X(b.t.length-i0-1),xe=X(b.t.length-i0-1+fut);
+  s+=`<polygon points="${xs},${Y(r.c)} ${xe},${Y(hi)} ${xe},${Y(lo)}" fill="rgba(59,130,246,.16)" stroke="rgba(59,130,246,.35)"/><text x="${xe-70}" y="${Y(hi)-6}" style="fill:#7fb0ff">εύρος 90%</text>`;
+  const tg=r.c+M.k*r.atr,st=r.c-M.k*r.atr;s+=`<line x1="${xs}" x2="${xe}" y1="${Y(tg)}" y2="${Y(tg)}" stroke="#22c55e" stroke-dasharray="4 4"/><text x="${xe+3}" y="${Y(tg)+4}" style="fill:#22c55e">+1</text><line x1="${xs}" x2="${xe}" y1="${Y(st)}" y2="${Y(st)}" stroke="#ef4444" stroke-dasharray="4 4"/><text x="${xe+3}" y="${Y(st)+4}" style="fill:#ef4444">−1</text>`;
+  $("chart").innerHTML=s+"</svg>";$("chh").textContent=`Γράφημα · ${nm(sel)} ${TFS[cur].lab} · πρόβλεψη επόμενων ${M.N} κεριών`}
 function render(){const C=CACHE[cur],cfg=TFS[cur],M=MODELS[cur];if(!C)return;
-  const closeAt=C.latest+cfg.ms;$("status").textContent=`Κερί που έκλεισε: ${tstr(closeAt)} · επόμενη ανανέωση ${tstr(closeAt+cfg.ms+20000)} · εκπαίδευση έως ${M.trained_to.slice(0,10)}`+(C.missing.length?` · χωρίς δεδομένα: ${C.missing.join(", ").replace(/USDT/g,"")}`:"");
-  $("note").innerHTML=cfg.only?`<div class="card warn sm">⚠️ <b>15'</b>: μόνο BTC, ETH, SOL και μόνο τις μέρες με 0% fees. Στον έλεγχο ήταν +6 bp ανά σήμα χωρίς fees και αρνητικό με fees.</div>`:"";
-  let rows=C.rows.slice().sort((a,b)=>Math.abs(b.p-.5)-Math.abs(a.p-.5));if(cfg.only)rows=rows.filter(r=>cfg.only.includes(r.s));
-  const sigs=rows.filter(r=>r.sig);const nu=sigs.filter(r=>r.sig>0).length,nd=sigs.length-nu;
-  $("now").innerHTML=`<div class="grid"><div class="kpi"><span class="mut sm">Σήματα τώρα</span><b>${sigs.length}</b></div><div class="kpi"><span class="mut sm">Αγορά / Πώληση</span><b><span class="up">${nu}</span> / <span class="dn">${nd}</span></b></div><div class="kpi"><span class="mut sm">Όριο σιγουριάς</span><b>${Math.round(THR*100)}%</b></div><div class="kpi"><span class="mut sm">Λήξη</span><b>${M.N} κεριά</b></div></div>`+
-   (sigs.length>=4&&Math.max(nu,nd)/sigs.length>=.75?`<p class="sm" style="color:var(--warn);margin:10px 0 0">⚠️ ${Math.max(nu,nd)} από ${sigs.length} σήματα δείχνουν την ίδια κατεύθυνση. Στην ουσία είναι ένα στοίχημα στην αγορά, όχι ${sigs.length} ξεχωριστά.</p>`:"");
-  $("tbl").innerHTML=`<table><tr><th>Σύμβολο</th><th>Τιμή</th><th>Πιθ. πρώτα ↑</th><th></th><th>Σήμα</th><th>Στόχος</th><th>Stop</th></tr>`+rows.map(r=>{const pc=Math.round(r.p*100);
-    const pill=r.sig>0?'<span class="pill pup">ΑΓΟΡΑ</span>':r.sig<0?'<span class="pill pdn">ΠΩΛΗΣΗ</span>':'<span class="pill pn">δεν ξέρω</span>';
-    const tg=r.sig?fmt(r.c+r.sig*M.k*r.atr):"—",st=r.sig?fmt(r.c-r.sig*M.k*r.atr):"—";const w=Math.abs(r.p-.5)*200;
-    return `<tr class="${r.sig?"":"dim"}"><td><b>${r.s.replace("USDT","")}</b></td><td>${fmt(r.c)}</td><td class="${r.p>=.5?"up":"dn"}">${pc}%</td><td><div class="bar"><i style="${r.p>=.5?"left:50%":"right:50%"};width:${w/2}%;background:${r.p>=.5?"var(--up)":"var(--dn)"}"></i></div></td><td>${pill}</td><td>${tg}</td><td>${st}</td></tr>`}).join("")+`</table>`;
-  const H=C.hist.filter(h=>h.o);const pend=C.hist.length-H.length;const n=H.length;
-  if(!n){$("shadow").innerHTML=`<h3 style="margin:0 0 6px">Σκιώδης λογαριασμός ${cfg.lab}</h3><p class="mut sm">Μετράει μόνο σήματα <b>μετά</b> την εκπαίδευση (${M.trained_to.slice(0,10)}). Ακόμα κανένα ολοκληρωμένο${pend?` · ${pend} σε εξέλιξη`:""}.</p>`;return}
-  const bp=H.map(h=>h.sig*h.o.r*1e4);const avg=bp.reduce((a,b)=>a+b,0)/n;const win=bp.filter(x=>x>0).length/n;const cum=bp.reduce((a,b)=>a+b-FEE,0);
-  const exp={"15m":6,"1h":17.6,"4h":20.4,"1d":50.8}[cur];
-  $("shadow").innerHTML=`<h3 style="margin:0 0 6px">Σκιώδης λογαριασμός ${cfg.lab} <span class="mut sm">(από ${M.trained_to.slice(0,10)}, δεδομένα που το μοντέλο δεν είχε δει)</span></h3>
-   <div class="grid"><div class="kpi"><span class="mut sm">Ολοκληρωμένα</span><b>${n}</b></div><div class="kpi"><span class="mut sm">Επιτυχία</span><b>${Math.round(win*100)}%</b></div>
-   <div class="kpi"><span class="mut sm">Μέσο / σήμα</span><b class="${avg>=0?"up":"dn"}">${avg.toFixed(1)} bp</b></div><div class="kpi"><span class="mut sm">Καθαρό σύνολο (−${FEE} bp)</span><b class="${cum>=0?"up":"dn"}">${cum.toFixed(0)} bp</b></div>
-   <div class="kpi"><span class="mut sm">Αναμενόμενο (έλεγχος)</span><b>${exp} bp</b></div></div>
-   <p class="sm mut">${n<100?"⚠️ Λίγα δείγματα: τα νούμερα αλλάζουν πολύ ακόμα. Θέλει 100+ για πρώτο συμπέρασμα.":""}${pend?` · ${pend} σε εξέλιξη`:""}</p>
-   <div class="scroll"><table><tr><th>Ώρα</th><th>Σύμβολο</th><th>Σήμα</th><th>Πιθ.</th><th>Έκβαση</th><th>bp</th></tr>${H.slice(-15).reverse().map(h=>`<tr><td>${tstr(h.t+TFS[cur].ms)}</td><td>${h.s.replace("USDT","")}</td><td class="${h.sig>0?"up":"dn"}">${h.sig>0?"ΑΓΟΡΑ":"ΠΩΛΗΣΗ"}</td><td>${Math.round(h.p*100)}%</td><td>${h.o.how==="exp"?"λήξη":(h.sig*h.o.r>0?"✔ στόχος":"✖ stop")}</td><td class="${h.sig*h.o.r>=0?"up":"dn"}">${(h.sig*h.o.r*1e4).toFixed(0)}</td></tr>`).join("")}</table></div>`;
+  let list=Object.values(C.rows);if(cfg.only)list=list.filter(r=>cfg.only.includes(r.s));
+  if(!C.rows[sel]||(cfg.only&&!cfg.only.includes(sel))){sel=cfg.only?cfg.only[0]:"BTCUSDT"}
+  $("sym").innerHTML=list.map(r=>r.s).sort().map(s=>`<option ${s===sel?"selected":""}>${s}</option>`).join("");
+  const r=C.rows[sel];const closeAt=C.latest+cfg.ms;
+  $("status").textContent=`Κερί που έκλεισε: ${tstr(closeAt)} · μοντέλο εκπαιδευμένο έως ${M.trained_to.slice(0,10)}`+(C.missing.length?` · χωρίς δεδομένα: ${C.missing.map(nm).join(", ")}`:"");
+  let notes="";if(cfg.only)notes+=`<div class="note">⚠️ <b>15'</b>: μόνο BTC, ETH, SOL και μόνο τις μέρες με 0% fees. Στον έλεγχο ήταν +6 bp ανά σήμα χωρίς fees, αρνητικό με fees.</div>`;
+  if(sel==="XAUUSDT"&&isWeekend(closeAt))notes+=`<div class="note">⚠️ Σαββατοκύριακο: η αγορά spot του χρυσού είναι κλειστή. Τα σήματα του XAU αυτές τις ώρες να αγνοούνται.</div>`;$("notes").innerHTML=notes;
+  chart(C,r);
+  if(r){const p=r.p,sg=r.sig;const tg=r.c+M.k*r.atr,st=r.c-M.k*r.atr,lo=r.c+RQ[cur][0]*r.atr,hi=r.c+RQ[cur][1]*r.atr;
+    $("prh").textContent=`Πρόβλεψη · επόμενα ${M.N} κεριά (${cfg.h})`;
+    $("pred").innerHTML=`<div class="k"><div class="t">Κατεύθυνση</div><div class="v ${p>=.5?"up":"dn"}">${p>=.5?"↑ "+pct(p):"↓ "+pct(1-p)}</div><div class="pb"><i style="width:${p*100}%"></i></div><div class="sm mut">Βάση σύγκρισης (live): ${isFinite(C.base)?pct(C.base):"—"}</div></div>
+     <div class="k"><div class="t">Ποιο χτυπιέται πρώτο</div><div style="margin-top:6px"><b class="up">+1 ATR (${fmt(tg)})</b> <b>${pct(p)}</b></div><div style="margin-top:4px"><b class="dn">−1 ATR (${fmt(st)})</b> <b>${pct(1-p)}</b></div><div class="sm mut" style="margin-top:6px">λήξη μετά από ${M.N} κεριά</div></div>
+     <div class="k"><div class="t">Αναμενόμενο εύρος (90%)</div><div class="v" style="font-size:20px">${fmt(lo)} – ${fmt(hi)}</div><div class="sm mut">${(RQ[cur][0]*r.atr/r.c*100).toFixed(1)}% / +${(RQ[cur][1]*r.atr/r.c*100).toFixed(1)}% · ιστορικό εύρος</div></div>
+     <div class="k ${sg>0?"sig":sg<0?"sigd":""}"><div class="t">Σήμα</div><div class="v ${sg>0?"up":sg<0?"dn":"mut"}">${sg>0?"ΙΣΧΥΡΟ ↑":sg<0?"ΙΣΧΥΡΟ ↓":"δεν ξέρω"}</div><div class="sm mut">${sg?"πάνω από το όριο "+pct(THR):"κάτω από το όριο "+pct(THR)+" · καλύτερα έξω"}</div></div>`;
+    const ct={};const z=zvec(M,r.x);walk(M,z,ct);const names=znames(M);const g={};for(const k in ct){const f=names[k];const G=GROUPS.find(G=>G[1].test(f));const key=G?G[0]:f;g[key]=(g[key]||0)+ct[k]}
+    const arr=Object.entries(g).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,8);const mxa=Math.max(...arr.map(a=>Math.abs(a[1])),1e-9);
+    $("why").innerHTML=arr.map(([k,v])=>{const w=Math.abs(v)/mxa*50;return `<div class="why"><span>${k}</span><div class="b"><i style="${v>=0?"left:50%":"right:50%"};width:${w}%;background:${v>=0?"var(--up)":"var(--dn)"}"></i></div><b class="${v>=0?"up":"dn"}" style="text-align:right">${v>=0?"+":""}${v.toFixed(2)}</b></div>`}).join("");
+    const X=C.all[sel].X,i=r.i,cr=r.cr;const e200=X.ema200[i],p96=X.pos96[i],vr=X.volr[i],fu=X.fund[i];
+    const trend=e200>0.5?"πάνω από EMA200":e200<-0.5?"κάτω από EMA200":"γύρω στην EMA200";const pos=p96>0.8?"στο πάνω μέρος του εύρους":p96<0.2?"στο κάτω μέρος του εύρους":"στη μέση του εύρους";
+    const vol=vr>1.3?`<span class="pill pw">αυξημένη ×${vr.toFixed(2)}</span>`:vr<0.75?`<span class="pill pn">συμπιεσμένη ×${vr.toFixed(2)}</span>`:`<span class="pill pn">κανονική ×${vr.toFixed(2)}</span>`;
+    const btc=C.all.BTCUSDT?C.all.BTCUSDT.X.r16raw[C.all.BTCUSDT.idx.get(C.latest)]:NaN;
+    let reg=`<div class="row"><span>Τάση (${nm(sel)})</span><b>${trend} · ${pos}</b></div><div class="row"><span>Μεταβλητότητα</span>${vol}</div>
+     <div class="row"><span>Funding (τελευταίο)</span><b class="${fu>0?"up":"dn"}">${isFinite(fu)?(fu*100).toFixed(4)+"%":"—"}</b></div>
+     <div class="row"><span>BTC τα τελευταία 16 κεριά</span><b class="${btc>=0?"up":"dn"}">${isFinite(btc)?(btc>=0?"+":"")+(btc*100).toFixed(2)+"%":"—"}</b></div>
+     <div class="row"><span>Αγορά: νομίσματα σε άνοδο (4 κεριά)</span><b>${pct(cr.up_share)}</b></div>`;
+    if(cfg.oi&&isFinite(X.oi_c4[i]))reg+=`<div class="row"><span>OI ${nm(sel)} (4 κεριά)</span><b class="${X.oi_c4[i]>=0?"up":"dn"}">${(X.oi_c4[i]>=0?"+":"")+(X.oi_c4[i]*100).toFixed(1)}%</b></div>`;
+    reg+=`<div class="row"><span class="mut">Κλίμα macro · γεγονότα (CPI/Fed) · options Deribit · ρευστοποιήσεις · αναλυτής AI</span><span class="pill pn">έρχεται</span></div>`;$("regime").innerHTML=reg;
+  }
+  const sorted=list.slice().sort((a,b)=>b.p-a.p);$("rsh").textContent=`Σχετική δύναμη · ${sorted.length} όργανα · ${cfg.lab}`;
+  const sigs=sorted.filter(x=>x.sig);const nu=sigs.filter(x=>x.sig>0).length,nd=sigs.length-nu;
+  $("rs").innerHTML=(sigs.length>=4&&Math.max(nu,nd)/sigs.length>=.75?`<div class="note">⚠️ ${Math.max(nu,nd)} από ${sigs.length} σήματα δείχνουν την ίδια κατεύθυνση: στην ουσία ένα στοίχημα στην αγορά, όχι ${sigs.length} ξεχωριστά.</div>`:"")+
+   `<table><tr><th>#</th><th>Όργανο</th><th>Πιθ. ↑</th><th>Στόχος</th><th>Stop</th><th>Σήμα</th></tr>`+sorted.map((x,k)=>`<tr class="click ${x.s===sel?"sel":""}" data-s="${x.s}"><td>${k+1}</td><td><b>${nm(x.s)}</b></td><td class="${x.p>=.5?"up":"dn"}">${pct(x.p)}</td><td>${x.sig?fmt(x.c+x.sig*M.k*x.atr):"—"}</td><td>${x.sig?fmt(x.c-x.sig*M.k*x.atr):"—"}</td><td>${x.sig>0?'<span class="pill pup">ΙΣΧΥΡΟ ↑</span>':x.sig<0?'<span class="pill pdn">ΙΣΧΥΡΟ ↓</span>':'<span class="pill pn">δεν ξέρω</span>'}</td></tr>`).join("")+"</table>";
+  $("rs").querySelectorAll("tr.click").forEach(tr=>tr.onclick=()=>{sel=tr.dataset.s;ls.set("tg.sym",sel);render()});
+  let sc=`<table><tr><th>TF</th><th>Σήματα</th><th>Επιτυχία</th><th>Βάση</th><th>Εύρος 90%</th><th>Σύνολο (0% fees)</th></tr>`;
+  for(const tf in TFS){const D=CACHE[tf];if(!D){sc+=`<tr><td>${TFS[tf].lab}</td><td colspan="5" class="mut">φορτώνει…</td></tr>`;continue}const S=stats(D.hist);
+    sc+=`<tr><td><b>${TFS[tf].lab}</b></td><td>${S.n}</td><td class="${S.n&&S.win>=.5?"up":"dn"}">${S.n?pct(S.win):"—"}</td><td class="mut">${isFinite(D.base)?pct(D.base):"—"}</td><td>${isFinite(D.cover)?pct(D.cover):"—"}</td><td class="${S.R>=0?"up":"dn"}">${S.n?(S.R>=0?"+":"")+S.R.toFixed(1)+"R":"—"}</td></tr>`}
+  $("score").innerHTML=sc+`</table><p class="sm mut" style="margin:6px 0 0">Μετράει μόνο από την ημερομηνία εκπαίδευσης κάθε μοντέλου και μετά. Κάτω από 100 σήματα τα νούμερα αλλάζουν πολύ ακόμα. 1R = 1 ATR.</p>`;
+  const S=stats(C.hist),H=C.hist.filter(h=>h.o),pend=C.hist.length-H.length;$("shh").textContent=`Σκιώδης λογαριασμός · ${cfg.lab} · από ${M.trained_to.slice(0,10)}`;
+  $("shadow").innerHTML=!S.n?`<p class="mut">Ακόμα κανένα ολοκληρωμένο σήμα${pend?` · ${pend} σε εξέλιξη`:""}.</p>`:
+   `<div class="cards4"><div class="k"><div class="t">Ολοκληρωμένα</div><div class="v">${S.n}</div></div><div class="k"><div class="t">Επιτυχία</div><div class="v">${pct(S.win)}</div></div><div class="k"><div class="t">Μέσο / σήμα</div><div class="v ${S.avg>=0?"up":"dn"}">${S.avg.toFixed(1)} bp</div><div class="sm mut">αναμενόμενο από τον έλεγχο: ${EXP[cur]} bp</div></div><div class="k"><div class="t">Καθαρό (−${FEE} bp/trade)</div><div class="v ${S.net>=0?"up":"dn"}">${S.net.toFixed(0)} bp</div></div></div>
+    <p class="sm mut">${S.n<100?"⚠️ Λίγα δείγματα: χρειάζονται 100+ για πρώτο συμπέρασμα. ":""}${pend?pend+" σε εξέλιξη.":""}</p>
+    <div class="scroll"><table><tr><th>Ώρα</th><th>Όργανο</th><th>Σήμα</th><th>Πιθ.</th><th>Έκβαση</th><th>bp</th></tr>${H.slice(-15).reverse().map(h=>`<tr><td>${tstr(h.t+cfg.ms)}</td><td>${nm(h.s)}</td><td class="${h.sig>0?"up":"dn"}">${h.sig>0?"ΑΓΟΡΑ":"ΠΩΛΗΣΗ"}</td><td>${pct(h.p)}</td><td>${h.o.how==="exp"?"λήξη":(h.sig*h.o.r>0?"✔ στόχος":"✖ stop")}</td><td class="${h.sig*h.o.r>=0?"up":"dn"}">${(h.sig*h.o.r*1e4).toFixed(0)}</td></tr>`).join("")}</table></div>`;
 }
-let timer=null;
-async function refresh(){const tf=cur;try{await load(tf);if(tf===cur)render()}catch(e){$("status").textContent="Σφάλμα φόρτωσης: "+e.message+" · ξαναδοκιμάζω σε 1'";clearTimeout(timer);timer=setTimeout(refresh,6e4);return}
-  const C=CACHE[tf],cfg=TFS[tf];if(!C||tf!==cur)return;const next=C.latest+2*cfg.ms+20000;clearTimeout(timer);timer=setTimeout(refresh,Math.max(15000,next-Date.now()))}
-function start(){const T=$("tabs");T.innerHTML="";for(const tf in TFS){const b=document.createElement("button");b.className="tab"+(tf===cur?" on":"");b.textContent=TFS[tf].lab;
-  b.onclick=()=>{cur=tf;ls.set("tg.tf",tf);[...T.children].forEach(x=>x.classList.toggle("on",x===b));if(CACHE[tf]&&Date.now()-CACHE[tf].at<6e4){render()}else{$("tbl").innerHTML='<p class="mut">Φόρτωση…</p>';refresh()}};T.appendChild(b)}
-  refresh()}
-document.addEventListener("visibilitychange",()=>{if(!document.hidden&&MODELS&&CACHE[cur]&&Date.now()>CACHE[cur].latest+2*TFS[cur].ms)refresh()});
+function tick(){const C=CACHE[cur];if(!C){$("cd").textContent="⏱ —";return}const nxt=C.latest+2*TFS[cur].ms;let s=Math.max(0,Math.round((nxt-Date.now())/1000));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;
+  $("cd").textContent=`⏱ επόμενο κερί σε ${h?h+":":""}${String(m).padStart(h?2:1,"0")}:${String(ss).padStart(2,"0")}`;if(s===0&&!C.busy){C.busy=true;setTimeout(()=>refresh(cur),20000)}}
+async function refresh(tf){try{await load(tf);if(tf===cur)render();else render()}catch(e){if(tf===cur)$("status").textContent="Σφάλμα φόρτωσης: "+e.message+" · ξαναδοκιμάζω σε 1'";setTimeout(()=>refresh(tf),6e4)}}
+async function start(){const T=$("tabs");T.innerHTML="";for(const tf in TFS){const b=document.createElement("button");b.className="btn"+(tf===cur?" on":"");b.textContent=TFS[tf].lab;
+  b.onclick=()=>{cur=tf;ls.set("tg.tf",tf);[...T.children].forEach(x=>x.classList.toggle("on",x===b));if(CACHE[tf]&&Date.now()<CACHE[tf].latest+2*TFS[tf].ms+20000)render();else{$("status").textContent="Φόρτωση…";refresh(tf)}};T.appendChild(b)}
+  $("sym").onchange=e=>{sel=e.target.value;ls.set("tg.sym",sel);render()};setInterval(tick,1000);
+  await refresh(cur);for(const tf of Object.keys(TFS))if(tf!==cur&&!CACHE[tf])await refresh(tf);}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&MODELS&&CACHE[cur]&&Date.now()>CACHE[cur].latest+2*TFS[cur].ms+20000)refresh(cur)});
 </script></body></html>
