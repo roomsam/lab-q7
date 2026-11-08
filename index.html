@@ -195,7 +195,7 @@ function evRender(){const el=document.getElementById("events");if(!el)return;if(
 // ---------- liquidations (live, display only) ----------
 let LIQ=[];try{LIQ=JSON.parse(localStorage.getItem("tg.liq")||"[]")}catch(e){LIQ=[]}
 let LWS=null,LSTATE="—",LSINCE=Date.now();
-function liqConnect(){try{LWS=new WebSocket("wss://fstream.binance.com/ws/!forceOrder@arr");LWS.onopen=()=>{LSTATE="συνδεδεμένο";liqRender()};
+function liqConnect(){try{LWS=new WebSocket("wss://fstream.binance.com/market/ws/!forceOrder@arr");LWS.onopen=()=>{LSTATE="συνδεδεμένο";liqRender()};
   LWS.onmessage=ev=>{try{const m=JSON.parse(ev.data);const o=m.o;if(!o||!SYMS.includes(o.s))return;const v=(+o.ap||+o.p)*(+o.z||+o.q);LIQ.push({t:+o.T||m.E,s:o.s,side:o.S==="SELL"?"L":"S",v,p:+o.ap||+o.p})}catch(e){}};
   LWS.onclose=()=>{LSTATE="αποσυνδέθηκε · ξανασύνδεση…";liqRender();setTimeout(liqConnect,5000)};LWS.onerror=()=>{try{LWS.close()}catch(e){}}}catch(e){LSTATE="δεν υποστηρίζεται";}}
 const usd=v=>v>=1e6?"$"+(v/1e6).toFixed(2)+"M":v>=1e3?"$"+(v/1e3).toFixed(0)+"K":"$"+v.toFixed(0);
