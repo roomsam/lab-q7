@@ -48,6 +48,7 @@ tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#142
  <div class="card"><div class="h">Πίνακας επιτυχίας · live (δεδομένα που δεν είδε)</div><div class="scroll" id="score"></div></div>
 </div></div>
 <div class="card"><div class="h" id="shh">Σκιώδης λογαριασμός</div><div id="shadow"></div></div>
+<div class="card"><div class="h" id="exh">Σκιώδης εκτέλεση 4H · post-only (προσομοίωση)</div><div id="exec"><p class="mut sm">Φόρτωση…</p></div></div>
 <p class="sm mut">Πειραματικό εργαλείο για προσωπική χρήση. Πιθανότητες από μοντέλο, όχι βεβαιότητες. Στόχος/stop = ±1 ATR, λήξη μετά από Ν κεριά. Κόστη 8 bp ανά trade στα «καθαρά».</p>
 </div></div>
 <script src="features.js"></script>
@@ -180,6 +181,48 @@ function render(){const C=CACHE[cur],cfg=TFS[cur],M=MODELS[cur];if(!C)return;
 }
 
 
+
+// ---------- 4H shadow execution (display only; does not touch signals/model) ----------
+let EXR=null,EXAT=0,EXBUSY=false;
+async function k15(s,from){const out={t:[],o:[],h:[],l:[],c:[]};let st=from;const now=Date.now();for(let p=0;p<40&&st<now;p++){const a=await j(`${API}/fapi/v1/klines?symbol=${s}&interval=15m&startTime=${st}&limit=1500`);if(!a.length)break;for(const k of a){if(+k[6]>now)continue;if(out.t.length&&+k[0]<=out.t[out.t.length-1])continue;out.t.push(+k[0]);out.o.push(+k[1]);out.h.push(+k[2]);out.l.push(+k[3]);out.c.push(+k[4])}st=+a[a.length-1][0]+9e5;if(a.length<1500)break}return out}
+function exSim(h,m,N){const TF=144e5,di=h.sig,e=h.c,a=h.atr,hs=(h.s==="BTCUSDT"||h.s==="ETHUSDT")?0.00005:0.0002;
+  const t0=h.t+TF,p0=m.t.indexOf(t0),r={issue:t0,lim:e,hs};if(p0<0)return null;const pend=p0+N*16;r.done=pend<=m.t.length;
+  const end=Math.min(pend,m.t.length);
+  for(let j=p0;j<end;j++)if(m.t[j]!==t0+(j-p0)*9e5){r.gap=true;return r}
+  const TK=0.0005+0.0001+hs,MK=0.0002,tp=e+di*a,sl=e-di*a;
+  const cost=(kind,mk)=>((mk?MK:TK)+(kind==="TP"?MK:TK))/(a/e);
+  const run=(st,en)=>{for(let j=st;j<end;j++){const hsl=di>0?m.l[j]<=sl:m.h[j]>=sl,htp=di>0?m.h[j]>=tp:m.l[j]<=tp;if(hsl)return{k:"SL",R:(sl-en)*di/a};if(htp)return{k:"TP",R:(tp-en)*di/a}}return r.done?{k:"TO",R:(m.c[pend-1]-en)*di/a}:null};
+  // eligibility at submission: order placed at the open of the first 15m bar after the 4H close; rejected as post-only if that open has already crossed the limit by more than 1bp (within 1bp = inside the spread, flagged as marginal)
+  const op=m.o[p0],cr=(di>0?e-op:op-e)/e;r.op=op;r.cross=cr;r.elig=cr<=1e-4;r.edge=cr>0&&cr<=1e-4;
+  {const x=run(p0,op);r.taker=x?{k:x.k,R:x.R-cost(x.k,false)}:null}
+  for(const [W,lab] of [[1,"w15"],[4,"w60"]]){let f=-1;if(r.elig)for(let j=p0;j<Math.min(p0+W,end);j++){if(di>0?m.l[j]<=e*(1-1e-4):m.h[j]>=e*(1+1e-4)){f=j;break}}
+    const o={};if(f>=0){o.fill=true;o.at=m.t[f];const hsl=di>0?m.l[f]<=sl:m.h[f]>=sl;const x=hsl?{k:"SL",R:(sl-e)*di/a}:run(f+1,e);o.po=x?{k:x.k,R:x.R-cost(x.k,true)}:null}
+    else if(p0+W<=m.t.length){o.fill=false;const jf=Math.min(p0+W,pend-1);const x=jf<end?run(jf,m.o[jf]):null;o.fb=x?{k:x.k,R:x.R-cost(x.k,false)}:null}
+    else o.wait=true;r[lab]=o}
+  return r}
+async function exLoad(){if(EXBUSY||!CACHE["4h"]||!MODELS)return;if(EXR&&Date.now()-EXAT<9e5&&EXR.key===CACHE["4h"].at)return;EXBUSY=true;
+  try{const H=CACHE["4h"].hist,N=MODELS["4h"].N;const by={};for(const h of H)(by[h.s]=by[h.s]||[]).push(h);const syms=Object.keys(by);
+    const ms=await pool(syms,4,s=>k15(s,Math.min(...by[s].map(h=>h.t))+144e5));const rows=[];
+    syms.forEach((s,i)=>{const m=ms[i];for(const h of by[s]){const r=m?exSim(h,m,N):null;rows.push({h,r})}});rows.sort((a,b)=>a.h.t-b.h.t);
+    EXR={rows,key:CACHE["4h"].at};EXAT=Date.now()}catch(e){EXR={err:e.message}}EXBUSY=false;exRender()}
+function exRender(){const el=$("exec");if(!el)return;if(!EXR){el.innerHTML='<p class="mut sm">Φόρτωση κεριών 15′…</p>';return}if(EXR.err){el.innerHTML='<p class="mut sm">Δεν φόρτωσαν τα κεριά 15′ · ξαναδοκιμάζω.</p>';return}
+  const R=EXR.rows.filter(x=>x.r&&!x.r.gap),gaps=EXR.rows.length-R.length,done=R.filter(x=>x.r.done);
+  const sum=a=>a.reduce((p,q)=>p+q,0),f3=v=>isFinite(v)?(v>=0?"+":"")+v.toFixed(3):"—",cl=v=>isFinite(v)?(v>=0?"up":"dn"):"mut";
+  const line=(lab,vals,nSig,note)=>{const n=vals.length,s_=sum(vals);return`<tr><td>${lab}${note?`<br><span class="sm mut">${note}</span>`:""}</td><td>${n} / ${nSig}</td><td>${nSig?pct(n/nSig):"—"}</td><td class="${cl(s_/n)}">${n?f3(s_/n):"—"}</td><td class="${cl(s_/nSig)}">${nSig?f3(s_/nSig):"—"}</td><td class="${cl(s_)}">${n?(s_>=0?"+":"")+s_.toFixed(1):"—"}</td></tr>`};
+  const nS=done.length,elig=done.filter(x=>x.r.elig).length;let tb=`<table><tr><th>Σενάριο</th><th>Εκτελέσεις / σήματα</th><th>Εκτ.</th><th>R / εκτελεσμένο</th><th>R / σήμα</th><th>Σύνολο R</th></tr>`;
+  tb+=line("Taker στο άνοιγμα (αναφορά)",done.filter(x=>x.r.taker).map(x=>x.r.taker.R),nS,"market στο 1ο 15′ μετά το κλείσιμο");
+  for(const [lab,k] of [["15′","w15"],["60′","w60"]]){const D=done.filter(x=>x.r[k]&&!x.r[k].wait);const F=D.filter(x=>x.r[k].fill&&x.r[k].po),M=D.filter(x=>x.r[k].fill===false&&x.r[k].fb);
+    tb+=line(`Post-only ${lab} · μόνο fills`,F.map(x=>x.r[k].po.R),nS,"όσα δεν γέμισαν = 0");
+    tb+=line(`&nbsp;&nbsp;↳ taker fallback ${lab} (μόνο τα χαμένα)`,M.map(x=>x.r[k].fb.R),nS,"market στο τέλος του παραθύρου");
+    tb+=line(`Post-only ${lab} + fallback`,F.map(x=>x.r[k].po.R).concat(M.map(x=>x.r[k].fb.R)),nS,"")}
+  tb+="</table>";
+  const pend=R.length-done.length;const cell=o=>!o?"—":o.wait?'<span class="pill pn">αναμονή</span>':o.fill?`<span class="pill pup">εκτιμ. fill έως ${new Date(o.at+9e5).toLocaleTimeString("el-GR",{hour:"2-digit",minute:"2-digit"})}</span>`:'<span class="pill pw">όχι fill</span>';
+  const rv=(o,tk)=>{const x=o&&o.fill?o.po:o&&o.fb;return x?`<span class="${cl(x.R)}">${f3(x.R)}</span>${o.fb?'<span class="sm mut"> fb</span>':""}`:'<span class="mut">—</span>'};
+  const list=R.slice(-15).reverse().map(({h,r})=>`<tr><td>${tstr(r.issue)}</td><td>${nm(h.s)}</td><td class="${h.sig>0?"up":"dn"}">${h.sig>0?"ΑΓΟΡΑ":"ΠΩΛΗΣΗ"}</td><td>${fmt(r.lim)}</td><td>${!r.elig?`<span class="pill pdn" title="άνοιγμα ${fmt(r.op)}">όχι</span>`:r.edge?`<span class="pill pw" title="άνοιγμα ${fmt(r.op)}">οριακά</span>`:'<span class="pill pup">ναι</span>'}</td><td>${cell(r.w15)}</td><td>${rv(r.w15)}</td><td>${cell(r.w60)}</td><td>${rv(r.w60)}</td><td>${r.done&&r.taker?`<span class="${cl(r.taker.R)}">${f3(r.taker.R)}</span>`:'<span class="mut">σε εξέλιξη</span>'}</td></tr>`).join("");
+  el.innerHTML=(nS?tb:'<p class="mut">Ακόμα κανένα ολοκληρωμένο σήμα 4H.</p>')+
+   `<p class="sm mut" style="margin:6px 0">Ολοκληρωμένα: ${nS}${pend?` · σε εξέλιξη: ${pend}`:""}${gaps?` · χωρίς πλήρη 15′: ${gaps}`:""} · επιλέξιμα ως post-only: ${nS?elig+" ("+pct(elig/nS)+")":"—"}${nS?`, εκ των οποίων οριακά ${done.filter(x=>x.r.edge).length}`:""}. ${nS<100?"⚠️ Κάτω από 100: τα νούμερα αλλάζουν πολύ ακόμα.":""}</p>
+   <div class="scroll"><table><tr><th>Έκδοση</th><th>Όργανο</th><th>Σήμα</th><th>Limit</th><th>Post-only;</th><th>15′</th><th>R 15′</th><th>60′</th><th>R 60′</th><th>R taker</th></tr>${list}</table></div>
+   <p class="sm mut" style="margin:8px 0 0">Κανόνες: έκδοση = κλείσιμο του κεριού 4H· limit = τιμή κλεισίματος· στόχος/stop ±1 ATR από αυτή, λήξη σε ${MODELS["4h"].N} κεριά 4H, έλεγχος σε κεριά 15′ (αν stop και fill στο ίδιο 15′ → μετράει stop). Επιλέξιμη ως post-only = το άνοιγμα του 1ου 15′ δεν έχει περάσει ήδη το limit πάνω από 1 bp (αλλιώς η εντολή θα απορριπτόταν και μετράει ως «όχι fill»)· «οριακά» = πέρασε έως 1 bp, μέσα στο spread, δεν ξέρουμε σίγουρα. <b>Εκτιμώμενο fill</b> = η τιμή πέρασε το limit κατά 1 bp μέσα στο παράθυρο· είναι εκτίμηση, όχι πραγματική θέση στην ουρά. Κόστη: maker 2 bp (είσοδος και στόχος), taker 5 bp + 1 bp slippage + μισό spread (BTC/ETH 0,5 bp, λοιπά 2 bp) για stop/λήξη και για το fallback. «fb» = εκτελέστηκε με taker fallback. 1R = 1 ATR. Δεν αλλάζει τα σήματα.</p>`}
 // ---------- high-impact events (display + warnings only) ----------
 let EVENTS=null;const EVC={USD:"🇺🇸",EUR:"🇪🇺",GBP:"🇬🇧",JPY:"🇯🇵",CNY:"🇨🇳",CAD:"🇨🇦",AUD:"🇦🇺",NZD:"🇳🇿",CHF:"🇨🇭"};const EV_PRE=3*36e5,EV_POST=36e5;
 async function loadEvents(){try{const r=await fetch("events.json",{cache:"no-cache"});if(!r.ok)throw 0;const j=await r.json();EVENTS=(j.events||[]).map(e=>({...e,t:Date.parse(e.date)})).filter(e=>isFinite(e.t)).sort((a,b)=>a.t-b.t);EVENTS.updated=j.updated}catch(e){EVENTS=[];EVENTS.err=true}try{evRender();if(MODELS&&CACHE[cur])render()}catch(e){}}
@@ -203,19 +246,36 @@ function liqConnect(){try{LWS=new WebSocket("wss://fstream.binance.com/market/ws
   LWS.onclose=()=>{covMark();LON=false;LSTATE="αποσυνδέθηκε · ξανασύνδεση…";liqRender();setTimeout(liqConnect,5000)};LWS.onerror=()=>{try{LWS.close()}catch(e){}}}catch(e){LSTATE="δεν υποστηρίζεται";}}
 const usd=v=>v>=1e6?"$"+(v/1e6).toFixed(2)+"M":v>=1e3?"$"+(v/1e3).toFixed(0)+"K":"$"+v.toFixed(0);
 // τελευταίο συμβάν (συστάδα 60") για το επιλεγμένο νόμισμα + αντίδραση τιμής στα 5'
-let LEV=null,LEVK=null,LEVBUSY=false,LEVT=0;
+// ΚΑΝΟΝΕΣ (σταθεροί): ζώνη = μέση τιμή συμβάντος ±0,05% · «Επόμενο 5'» = το πρώτο πλήρες 5λεπτο που ξεκινά μετά το συμβάν (πάνω/κάτω/μέσα)
+// retest = το πρώτο 5λεπτο μετά από αυτό που ακουμπά τη ζώνη · μετά μετράμε τα 6 επόμενα πλήρη 5λεπτα κλεισίματα και η ετικέτα παγώνει:
+// κράτησε = κανένα κλείσιμο στην αντίθετη πλευρά της ζώνης ΚΑΙ το 6ο στην πλευρά του «Επόμενου 5'» · απορρίφθηκε = ≥4 από τα 6 ΚΑΙ το 6ο στην αντίθετη πλευρά
+// ασαφές = οτιδήποτε άλλο ή «Επόμενο 5'» μέσα στη ζώνη · εκκρεμεί = χωρίς retest ή <6 κλεισίματα · ανεπαρκή δεδομένα = κενό στη ροή (±60") ή στα κεριά
+let LEV=null,LEVK=null,LEVBUSY=false,LEVT=0;let LFROZ={};try{LFROZ=JSON.parse(localStorage.getItem("tg.liqlab")||"{}")}catch(e){LFROZ={}}
 function liqEvent(now){const xs=LIQ.filter(x=>x.s===sel&&now-x.t<144e5).sort((a,b)=>a.t-b.t);if(!xs.length)return null;
   const cl=[];for(const x of xs){const c=cl[cl.length-1];if(c&&c.side===x.side&&x.t-c.t1<6e4){c.v+=x.v;c.pv+=x.p*x.v;c.t1=x.t}else cl.push({s:x.s,side:x.side,t0:x.t,t1:x.t,v:x.v,pv:x.p*x.v})}
   const big=cl.filter(c=>c.v>=1e4);const e=(big.length?big:cl)[(big.length?big:cl).length-1];e.p=e.pv/e.v;return e}
-async function liqReact(e){const k=e.s+e.t0;if(LEVBUSY)return;if(LEVK===k&&LEV&&LEV.done)return;if(LEVK===k&&Date.now()-LEVT<6e4)return;LEVBUSY=true;LEVT=Date.now();
-  try{const b0=Math.floor(e.t1/3e5)*3e5;const ks=await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${e.s}&interval=5m&startTime=${b0}&limit=60`).then(r=>r.json());
-    const now=Date.now();const closed=ks.filter(x=>+x[6]<now);const up=e.side==="S";let next="εκκρεμεί",retest="εκκρεμεί",done=false;
-    const n=closed.find(x=>+x[0]>b0);
-    const tol=e.p*5e-4;if(n&&Math.abs(+n[4]-e.p)<=tol){next=`έκλεισε μέσα στη ζώνη (${fmt(+n[4])})`;retest="—";done=closed.length-closed.indexOf(n)>6}else if(n){const c=+n[4];const above=c>e.p;next=(above?"έκλεισε πάνω":"έκλεισε κάτω")+` από τη ζώνη (${fmt(c)})`;
-      const after=closed.filter(x=>+x[0]>+n[0]);let ti=after.findIndex(x=>+x[3]<=e.p+tol&&+x[2]>=e.p-tol);
-      if(ti<0)retest="εκκρεμεί · δεν ξαναήρθε στη ζώνη";else{const rest=after.slice(ti);const holdUp=rest.every(x=>+x[4]>=e.p-tol),holdDn=rest.every(x=>+x[4]<=e.p+tol);
-        if(above&&holdUp)retest="ήρθε στη ζώνη και κράτησε πάνω";else if(!above&&holdDn)retest="ήρθε στη ζώνη και κράτησε κάτω";else retest=(above?"απορρίφθηκε · έκλεισε κάτω από τη ζώνη":"απορρίφθηκε · έκλεισε πάνω από τη ζώνη");done=rest.length>=6}}
-    LEV={next,retest,done};LEVK=k}catch(err){LEV={next:"δεν διαβάστηκε",retest:"δεν διαβάστηκε",done:false};LEVK=k}LEVBUSY=false;liqRender(true)}
+function covered(a,b){for(const [s,e] of LCOV)if(s<=a&&e>=b)return true;return false}
+async function liqReact(e){const k=e.s+e.t0;if(LFROZ[k]){LEV=LFROZ[k];LEVK=k;return}if(LEVBUSY)return;if(LEVK===k&&Date.now()-LEVT<6e4)return;LEVBUSY=true;LEVT=Date.now();
+  const ID="ανεπαρκή δεδομένα";
+  try{if(!covered(e.t0-6e4,e.t1+6e4)){LEV={next:ID,retest:ID,done:true,why:"κενό στη ροή γύρω από το συμβάν"};LEVK=k;LFROZ[k]=LEV;throw 0}
+    const b0=Math.floor(e.t1/3e5)*3e5;const ks=await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${e.s}&interval=5m&startTime=${b0}&limit=200`).then(r=>r.json());
+    const now=Date.now();const C=ks.filter(x=>+x[6]<now);
+    for(let i=1;i<C.length;i++)if(+C[i][0]-+C[i-1][0]!==3e5){LEV={next:ID,retest:ID,done:true,why:"κενό στα κεριά"};LEVK=k;LFROZ[k]=LEV;throw 0}
+    const tol=e.p*5e-4,hi=e.p+tol,lo=e.p-tol,side=c=>c>hi?1:c<lo?-1:0;
+    const ni=C.findIndex(x=>+x[0]>b0);let next="εκκρεμεί",retest="εκκρεμεί",done=false;
+    if(ni>=0){const n=C[ni],sd=side(+n[4]);next=(sd>0?"έκλεισε πάνω από τη":sd<0?"έκλεισε κάτω από τη":"έκλεισε μέσα στη")+` ζώνη (${fmt(+n[4])})`;
+      if(sd===0){retest="ασαφές · το «Επόμενο 5'» έκλεισε μέσα στη ζώνη";done=true}
+      else{const after=C.slice(ni+1);const ri=after.findIndex(x=>+x[3]<=hi&&+x[2]>=lo);
+        if(ri<0)retest="εκκρεμεί · δεν ξαναήρθε στη ζώνη";
+        else{const six=after.slice(ri+1,ri+7);
+          if(six.length<6)retest=`εκκρεμεί · retest ${new Date(+after[ri][0]).toLocaleTimeString("el-GR",{hour:"2-digit",minute:"2-digit"})}, κλεισίματα ${six.length}/6`;
+          else{const sides=six.map(x=>side(+x[4]));const opp=sides.filter(v=>v===-sd).length,last=sides[5];
+            if(opp===0&&last===sd)retest=sd>0?"κράτησε πάνω (6/6)":"κράτησε κάτω (6/6)";
+            else if(opp>=4&&last===-sd)retest=`απορρίφθηκε (${opp}/6 στην αντίθετη πλευρά)`;
+            else retest=`ασαφές (${opp}/6 στην αντίθετη πλευρά)`;done=true}}}}
+    LEV={next,retest,done};LEVK=k;if(done){LFROZ[k]=LEV;const ks2=Object.keys(LFROZ);if(ks2.length>200)delete LFROZ[ks2[0]];try{localStorage.setItem("tg.liqlab",JSON.stringify(LFROZ))}catch(_){}}}
+  catch(err){if(err!==0){LEV={next:"δεν διαβάστηκε",retest:"δεν διαβάστηκε",done:false};LEVK=k}else{try{localStorage.setItem("tg.liqlab",JSON.stringify(LFROZ))}catch(_){}}}
+  LEVBUSY=false;liqRender(true)}
 function liqRender(fromReact){const now=Date.now();LIQ=LIQ.filter(x=>now-x.t<864e5);if(LIQ.length>6000)LIQ=LIQ.slice(-6000);covMark();try{localStorage.setItem("tg.liq",JSON.stringify(LIQ));localStorage.setItem("tg.liqcov",JSON.stringify(LCOV))}catch(e){}
   const el=document.getElementById("liq");if(!el)return;
   const agg=(ms,f)=>{let L=0,S=0;for(const x of LIQ)if(now-x.t<ms&&(!f||x.s===f)){if(x.side==="L")L+=x.v;else S+=x.v}return[L,S]};
@@ -223,7 +283,7 @@ function liqRender(fromReact){const now=Date.now();LIQ=LIQ.filter(x=>now-x.t<864
     const bar=T?`<span class="pb" style="width:80px;margin:0;background:var(--up)"><i style="width:${w}%;background:var(--dn)"></i></span>`:`<span class="pb" style="width:80px;margin:0;background:#2a3446"></span>`;
     return `<div class="row"><span>${lab}<br><span class="sm mut">διαθέσιμα ${cov}' από ${tot>=60?tot/60+(tot===60?" ώρα":" ώρες"):tot+"'"}</span></span><span style="display:flex;align-items:center;gap:8px"><b class="${T?"dn":"mut"}">${usd(L)}</b>${bar}<b class="${T?"up":"mut"}">${usd(S)}</b></span></div>`};
   const e=liqEvent(now);let evh="";
-  if(e){const k=e.s+e.t0;if(LEVK!==k){LEV=null;}if(!fromReact&&(!LEV||!LEV.done))liqReact(e);
+  if(e){const k=e.s+e.t0;if(LEVK!==k){LEV=null;}if(LFROZ[k]){LEV=LFROZ[k];LEVK=k}if(!fromReact&&(!LEV||!LEV.done))liqReact(e);
     const lab=e.side==="S"?"Short liquidations":"Long liquidations";
     evh=`<div style="background:#0b111c;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px"><div><b>${e.s}</b> · <span class="${e.side==="S"?"up":"dn"}">${lab} ${usd(e.v)}</span> στα <b>${fmt(e.p)}</b> <span class="sm mut">(${new Date(e.t1).toLocaleTimeString("el-GR",{hour:"2-digit",minute:"2-digit"})})</span></div>`+
       `<div class="row sm"><span class="mut">Επόμενο 5'</span><span>${LEV?LEV.next:"…"}</span></div><div class="row sm"><span class="mut">Retest</span><span>${LEV?LEV.retest:"…"}</span></div></div>`}
@@ -232,10 +292,10 @@ function liqRender(fromReact){const now=Date.now();LIQ=LIQ.filter(x=>now-x.t<864
   el.innerHTML=evh+`<div class="sm mut" style="margin-bottom:4px"><span class="dn">■ long ρευστοποιήθηκαν</span> · <span class="up">■ short ρευστοποιήθηκαν</span> · <span>■ γκρι = χωρίς δεδομένα</span></div>`+
    row("Όλα · 1 ώρα",agg(36e5),36e5)+row("Όλα · 4 ώρες",agg(144e5),144e5)+row(nm(sel)+" · 4 ώρες",agg(144e5,sel),144e5)+
    (top.length?`<div class="sm mut" style="margin:8px 0 2px">Μεγαλύτερες (4 ώρες)</div>`+top.map(x=>`<div class="row sm"><span>${new Date(x.t).toLocaleTimeString("el-GR",{hour:"2-digit",minute:"2-digit"})} · <b>${nm(x.s)}</b></span><span class="${x.side==="L"?"dn":"up"}">${x.side==="L"?"long":"short"} ${usd(x.v)} @ ${fmt(x.p)}</span></div>`).join(""):"")+
-   `<p class="sm mut" style="margin:8px 0 0">${LSTATE} · καταγραφή από ${new Date(first).toLocaleString("el-GR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} · Μετράει μόνο όσο είναι ανοιχτή η σελίδα σε αυτή τη συσκευή, και η Binance στέλνει μία ρευστοποίηση ανά δευτερόλεπτο ανά νόμισμα, άρα τα ποσά είναι <b>κάτω όριο</b>. «Ζώνη» = μέση τιμή του συμβάντος ±0,05%. Ενημερωτικό, δεν μπαίνει στο μοντέλο.</p>`}
+   `<p class="sm mut" style="margin:8px 0 0">${LSTATE} · καταγραφή από ${new Date(first).toLocaleString("el-GR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} · Μετράει μόνο όσο είναι ανοιχτή η σελίδα σε αυτή τη συσκευή, και η Binance στέλνει μία ρευστοποίηση ανά δευτερόλεπτο ανά νόμισμα, άρα τα ποσά είναι <b>κάτω όριο</b>. «Ζώνη» = μέση τιμή του συμβάντος ±0,05%. «Επόμενο 5'» = πρώτο πλήρες 5λεπτο μετά το συμβάν. Retest: μετά την πρώτη επιστροφή στη ζώνη μετράμε 6 πλήρη 5λεπτα κλεισίματα και η ετικέτα παγώνει · <b>κράτησε</b> = κανένα κλείσιμο στην αντίθετη πλευρά και το 6ο στη σωστή · <b>απορρίφθηκε</b> = ≥4/6 και το 6ο στην αντίθετη · <b>ασαφές</b> = μικτό · <b>ανεπαρκή δεδομένα</b> = κενό στη ροή ή στα κεριά. Ενημερωτικό, δεν μπαίνει στο μοντέλο.</p>`}
 function tick(){const C=CACHE[cur];if(!C){$("cd").textContent="⏱ —";return}const nxt=C.latest+2*TFS[cur].ms;let s=Math.max(0,Math.round((nxt-Date.now())/1000));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;
   $("cd").textContent=`⏱ επόμενο κερί σε ${h?h+":":""}${String(m).padStart(h?2:1,"0")}:${String(ss).padStart(2,"0")}`;if(s===0&&!C.busy){C.busy=true;setTimeout(()=>refresh(cur),20000)}}
-async function refresh(tf){try{await load(tf);if(tf===cur)render();else render()}catch(e){if(tf===cur)$("status").textContent="Σφάλμα φόρτωσης: "+e.message+" · ξαναδοκιμάζω σε 1'";setTimeout(()=>refresh(tf),6e4)}}
+async function refresh(tf){try{await load(tf);if(tf===cur)render();else render();if(tf==="4h")exLoad()}catch(e){if(tf===cur)$("status").textContent="Σφάλμα φόρτωσης: "+e.message+" · ξαναδοκιμάζω σε 1'";setTimeout(()=>refresh(tf),6e4)}}
 async function start(){const T=$("tabs");T.innerHTML="";for(const tf in TFS){const b=document.createElement("button");b.className="btn"+(tf===cur?" on":"");b.textContent=TFS[tf].lab;
   b.onclick=()=>{cur=tf;ls.set("tg.tf",tf);[...T.children].forEach(x=>x.classList.toggle("on",x===b));if(CACHE[tf]&&Date.now()<CACHE[tf].latest+2*TFS[tf].ms+20000)render();else{$("status").textContent="Φόρτωση…";refresh(tf)}};T.appendChild(b)}
   $("sym").onchange=e=>{sel=e.target.value;ls.set("tg.sym",sel);render()};setInterval(tick,1000);prices();setInterval(prices,15000);liqConnect();liqRender();setInterval(liqRender,10000);loadEvents();setInterval(loadEvents,6e5);setInterval(evRender,6e4);$("cd").style.cursor="pointer";$("cd").title="Ανανέωση τώρα";$("cd").onclick=()=>{$("status").textContent="Ανανέωση…";refresh(cur)};
