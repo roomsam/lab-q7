@@ -53,7 +53,7 @@ const SYMS=["AAVEUSDT","ADAUSDT","AVAXUSDT","BCHUSDT","BNBUSDT","BTCUSDT","DOGEU
 const TFS={"15m":{lab:"15'",ms:9e5,only:["BTCUSDT","ETHUSDT","SOLUSDT"],h:"4 ώρες"},"1h":{lab:"1H",ms:36e5,h:"12 ώρες"},"4h":{lab:"4H",ms:144e5,oi:true,h:"24 ώρες"},"1d":{lab:"1D",ms:864e5,h:"5 μέρες"}};
 const RQ={"15m":[-4.59,4.51],"1h":[-3.92,3.98],"4h":[-2.7,2.78],"1d":[-2.34,2.59]};
 const EXP={"15m":6,"1h":17.6,"4h":20.4,"1d":50.8};
-const THR=0.65, FEE=8, API="https://fapi.binance.com";
+const THRS={"15m": 0.607, "1h": 0.624, "4h": 0.628, "1d": 0.684}, FEE=8, API="https://fapi.binance.com";
 const GROUPS=[["Ορμή (κίνηση τιμής)",/^r\d+$/],["Θέση στο εύρος / τάση",/^(pos|ema)\d+$/],["Μεταβλητότητα",/^(vol16|vol64|volr|rng|atrp)$/],["Σχήμα κεριού",/^(body|wick_up|wick_dn)$/],["Όγκος / delta",/^(vz|tb|tb8|cvd16|cvd64)$/],["Funding",/^fund$/],["OI / θέσεις traders",/^(oi_|ttp|tta|gl|tt_vs|taker|mkt_oi)/],["Τι κάνει το BTC",/^btc_/],["Όλη η αγορά (breadth)",/^(breadth|up_share|rs16|rs_rank)/],["Ώρα / μέρα",/^(hr|dow)$/],["Χαρακτήρας νομίσματος",/^sym_id$/]];
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 let MODELS=null,cur=ls.get("tg.tf")||"4h",sel=ls.get("tg.sym")||"BTCUSDT";const CACHE={};const $=id=>document.getElementById(id);
@@ -90,7 +90,7 @@ async function load(tf){
   SYMS.forEach((s,i)=>{const b=ks[i];if(!b||b.t.length<450||b.t[b.t.length-1]<latest-cfg.ms)return;all[s]={b,X:TGF.symFeatures(b,fs[i],ois[i],tf),idx:new Map(b.t.map((t,k)=>[t,k]))}});
   const cut=Date.parse(M.trained_to.replace(" ","T")+"Z");const times=all.BTCUSDT.b.t.filter(t=>t>cut);const hist=[];const rows={};let nAll=0,upAll=0,inb=0,nb=0;
   for(const t of times){const cr=TGF.crossAt(all,SYMS,t,!!cfg.oi);for(const s in cr){const A=all[s],i=A.idx.get(t);if(i<420)continue;const atr=A.X._atr[i];if(!(atr>0)||!(A.b.v[i]>0))continue;
-    const x=TGF.vector(M,A.X,i,cr[s]);const p=predict(M,x);const sg=p>=THR?1:p<=1-THR?-1:0;const use=!cfg.only||cfg.only.includes(s);
+    const x=TGF.vector(M,A.X,i,cr[s]);const p=predict(M,x);const T_=THRS[tf];const sg=p>=T_?1:p<=1-T_?-1:0;const use=!cfg.only||cfg.only.includes(s);
     if(t===latest)rows[s]={s,p,sig:sg,c:A.b.c[i],atr,x,cr:cr[s],i};
     if(use){const o=outcome(A.b,i,atr,M.N,M.k);if(o){if(o.how==="up"||o.how==="dn"){nAll++;if(o.how==="up")upAll++}
         if(i+M.N<A.b.t.length){nb++;const z=Math.log(A.b.c[i+M.N]/A.b.c[i])/(atr/A.b.c[i]);if(z>=RQ[tf][0]&&z<=RQ[tf][1])inb++}}
@@ -128,7 +128,7 @@ function render(){const C=CACHE[cur],cfg=TFS[cur],M=MODELS[cur];if(!C)return;
     $("pred").innerHTML=`<div class="k"><div class="t">Κατεύθυνση</div><div class="v ${p>=.5?"up":"dn"}">${p>=.5?"↑ "+pct(p):"↓ "+pct(1-p)}</div><div class="pb"><i style="width:${p*100}%"></i></div><div class="sm mut">Βάση σύγκρισης (live): ${isFinite(C.base)?pct(C.base):"—"}</div></div>
      <div class="k"><div class="t">Ποιο χτυπιέται πρώτο</div><div style="margin-top:6px"><b class="up">+1 ATR (${fmt(tg)})</b> <b>${pct(p)}</b></div><div style="margin-top:4px"><b class="dn">−1 ATR (${fmt(st)})</b> <b>${pct(1-p)}</b></div><div class="sm mut" style="margin-top:6px">λήξη μετά από ${M.N} κεριά</div></div>
      <div class="k"><div class="t">Αναμενόμενο εύρος (90%)</div><div class="v" style="font-size:20px">${fmt(lo)} – ${fmt(hi)}</div><div class="sm mut">${(RQ[cur][0]*r.atr/r.c*100).toFixed(1)}% / +${(RQ[cur][1]*r.atr/r.c*100).toFixed(1)}% · ιστορικό εύρος</div></div>
-     <div class="k ${sg>0?"sig":sg<0?"sigd":""}"><div class="t">Σήμα</div><div class="v ${sg>0?"up":sg<0?"dn":"mut"}">${sg>0?"ΙΣΧΥΡΟ ↑":sg<0?"ΙΣΧΥΡΟ ↓":"δεν ξέρω"}</div><div class="sm mut">${sg?"πάνω από το όριο "+pct(THR):"κάτω από το όριο "+pct(THR)+" · καλύτερα έξω"}</div></div>`;
+     <div class="k ${sg>0?"sig":sg<0?"sigd":""}"><div class="t">Σήμα</div><div class="v ${sg>0?"up":sg<0?"dn":"mut"}">${sg>0?"ΙΣΧΥΡΟ ↑":sg<0?"ΙΣΧΥΡΟ ↓":"δεν ξέρω"}</div><div class="sm mut">${sg?"πάνω από το όριο "+pct(THRS[cur]):"κάτω από το όριο "+pct(THRS[cur])+" · καλύτερα έξω"}</div></div>`;
     const ct={};const z=zvec(M,r.x);walk(M,z,ct);const names=znames(M);const g={};for(const k in ct){const f=names[k];const G=GROUPS.find(G=>G[1].test(f));const key=G?G[0]:f;g[key]=(g[key]||0)+ct[k]}
     const arr=Object.entries(g).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,8);const mxa=Math.max(...arr.map(a=>Math.abs(a[1])),1e-9);
     $("why").innerHTML=arr.map(([k,v])=>{const w=Math.abs(v)/mxa*50;return `<div class="why"><span>${k}</span><div class="b"><i style="${v>=0?"left:50%":"right:50%"};width:${w}%;background:${v>=0?"var(--up)":"var(--dn)"}"></i></div><b class="${v>=0?"up":"dn"}" style="text-align:right">${v>=0?"+":""}${v.toFixed(2)}</b></div>`}).join("");
