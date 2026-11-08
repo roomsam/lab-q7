@@ -39,6 +39,7 @@ tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#142
 <div class="grid"><div>
  <div class="card"><div class="h" id="chh">Γράφημα</div><div id="chart"></div></div>
  <div class="card"><div class="h" id="prh">Πρόβλεψη</div><div class="cards4" id="pred"></div><div id="entry" style="margin-top:10px"></div></div>
+ <div class="card"><div class="h" id="c2h">Κλείσιμο σε 2 κεριά</div><div id="c2"></div></div>
  <div class="card"><div class="h">Γιατί · οι παράγοντες που μέτρησαν τώρα</div><div id="why"></div><p class="sm mut" style="margin:8px 0 0">Πόσο έσπρωξε κάθε ομάδα δεικτών την πρόβλεψη (πράσινο: προς άνοδο, κόκκινο: προς πτώση). Υπολογίζεται από τα ίδια τα δέντρα του μοντέλου.</p></div>
  <div class="card"><div class="h">Κίνδυνος γεγονότων · υψηλού αντίκτυπου</div><div id="events"><p class="mut sm">Φόρτωση…</p></div></div>
 </div><div>
@@ -56,20 +57,22 @@ tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#142
 const SYMS=["AAVEUSDT","ADAUSDT","AVAXUSDT","BCHUSDT","BNBUSDT","BTCUSDT","DOGEUSDT","DOTUSDT","ETHUSDT","HYPEUSDT","LINKUSDT","LTCUSDT","NEARUSDT","PUMPUSDT","RUNEUSDT","SOLUSDT","SUIUSDT","TONUSDT","TRXUSDT","XAUUSDT","XMRUSDT","XRPUSDT","ZECUSDT"];
 const TFS={"15m":{lab:"15'",ms:9e5,only:["BTCUSDT","ETHUSDT","SOLUSDT"],h:"4 ώρες"},"1h":{lab:"1H",ms:36e5,h:"12 ώρες"},"4h":{lab:"4H",ms:144e5,oi:true,h:"24 ώρες"},"4hm":{lab:"4H+M",ms:144e5,oi:true,mac:true,iv:"4h",h:"24 ώρες",chal:true},"1d":{lab:"1D",ms:864e5,h:"5 μέρες"}};
 const RQ={"15m":[-4.59,4.51],"1h":[-3.92,3.98],"4h":[-2.7,2.78],"4hm":[-2.7,2.78],"1d":[-2.34,2.59]};
+const B2C={"15m":{"syms":3,"f":"2020-01-01","to":"2026-10-31","dn":[0.5313,342369],"up":[0.4763,349115],"fl":[0.5092,1797]},"1h":{"syms":23,"f":"2020-01-01","to":"2026-11-06","dn":[0.5258,549345],"up":[0.4787,560709],"fl":[0.4908,7093]},"4h":{"syms":23,"f":"2020-01-01","to":"2026-10-31","dn":[0.52,137407],"up":[0.4873,140191],"fl":[0.4825,858]},"1d":{"syms":23,"f":"2020-01-03","to":"2026-10-29","dn":[0.5132,23031],"up":[0.4905,23260],"fl":[0.5,46]}};const NOHIT={"15m": 0.0187, "1h": 0.0377, "4h": 0.1517, "1d": 0.1944};
+const C2DUR={"15m":"30 λεπτά","1h":"2 ώρες","4h":"8 ώρες","4hm":"8 ώρες","1d":"2 μέρες"};
 const EXP={"15m":6,"1h":17.6,"4h":20.4,"4hm":29.0,"1d":50.8};
 const THRS={"15m": 0.607, "1h": 0.624, "4h": 0.628, "4hm": 0.663, "1d": 0.684}, FEE=8, API="https://fapi.binance.com";
 const GROUPS=[["Ορμή (κίνηση τιμής)",/^r\d+$/],["Θέση στο εύρος / τάση",/^(pos|ema)\d+$/],["Μεταβλητότητα",/^(vol16|vol64|volr|rng|atrp)$/],["Σχήμα κεριού",/^(body|wick_up|wick_dn)$/],["Όγκος / delta",/^(vz|tb|tb8|cvd16|cvd64)$/],["Funding",/^fund$/],["OI / θέσεις traders",/^(oi_|ttp|tta|gl|tt_vs|taker|mkt_oi)/],["Τι κάνει το BTC",/^btc_/],["Όλη η αγορά (breadth)",/^(breadth|up_share|rs16|rs_rank)/],["Ώρα / μέρα",/^(hr|dow)$/],["Χαρακτήρας νομίσματος",/^sym_id$/],["Macro (δολάριο, αποδόσεις, VIX, μετοχές, Brent)",/^m_/]];
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 let PRICES={},PAT=0,MACRO=null;async function macro(){if(MACRO&&Date.now()-MACRO.at<36e5)return MACRO;const r=await fetch("macro.json",{cache:"no-cache"});const js=await r.json();MACRO={js,MF:TGF.macroFrame(js.series),at:Date.now()};return MACRO}
 async function prices(){try{const a=await j(`${API}/fapi/v1/ticker/price`);for(const x of a)PRICES[x.symbol]=+x.price;PAT=Date.now();if(MODELS&&CACHE[cur])render()}catch(e){}}
-let MODELS=null,cur=ls.get("tg.tf")||"4h",sel=ls.get("tg.sym")||"BTCUSDT";const CACHE={};const $=id=>document.getElementById(id);
+let M2C=null,MODELS=null,cur=ls.get("tg.tf")||"4h",sel=ls.get("tg.sym")||"BTCUSDT";const CACHE={};const $=id=>document.getElementById(id);
 // ---------- unlock ----------
-async function decrypt(pw){const enc=await (await fetch("models.enc",{cache:"no-cache"})).json();const b=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function decrypt(pw,file){const enc=await (await fetch(file||"models.enc",{cache:"no-cache"})).json();const b=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
   const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
   const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b(enc.salt),iterations:enc.iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
   const raw=await crypto.subtle.decrypt({name:"AES-GCM",iv:b(enc.iv)},key,b(enc.data));
   return JSON.parse(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"))).text())}
-async function unlock(pw,silent){$("gmsg").textContent="Ξεκλείδωμα…";try{MODELS=await decrypt(pw);ls.set("tg.k",pw);$("gate").style.display="none";$("app").style.display="";start()}catch(e){$("gmsg").textContent=silent?"":"Λάθος κωδικός ή πρόβλημα φόρτωσης."}}
+async function unlock(pw,silent){$("gmsg").textContent="Ξεκλείδωμα…";try{MODELS=await decrypt(pw);try{M2C=await decrypt(pw,"m2c.enc")}catch(e){M2C=null}ls.set("tg.k",pw);$("gate").style.display="none";$("app").style.display="";start()}catch(e){$("gmsg").textContent=silent?"":"Λάθος κωδικός ή πρόβλημα φόρτωσης."}}
 $("unlock").onclick=()=>unlock($("pw").value);$("pw").onkeydown=e=>{if(e.key==="Enter")unlock($("pw").value)};if(ls.get("tg.k"))unlock(ls.get("tg.k"),true);
 // ---------- data ----------
 async function j(url){for(let a=0;a<2;a++){try{const r=await fetch(url);if(r.ok)return await r.json()}catch(e){}await new Promise(r=>setTimeout(r,600))}throw new Error(url)}
@@ -95,14 +98,15 @@ async function load(tf){
   const all={};let latest=0;SYMS.forEach((s,i)=>{const b=ks[i];if(b&&b.t.length>=450)latest=Math.max(latest,b.t[b.t.length-1])});
   SYMS.forEach((s,i)=>{const b=ks[i];if(!b||b.t.length<450||b.t[b.t.length-1]<latest-cfg.ms)return;const X=TGF.symFeatures(b,fs[i],ois[i],IV);if(MC)TGF.addMacro(X,b,MC.MF);all[s]={b,X,idx:new Map(b.t.map((t,k)=>[t,k]))}});
   {const X0=all.BTCUSDT.X;const miss=M.features.filter(f=>!(f in X0)&&!['btc_r1','btc_r4','btc_r16','btc_cvd16','btc_vol16','breadth4','breadth16','up_share','rs16','rs_rank','sym_id','mkt_oi_c4'].includes(f));if(miss.length)throw new Error('η σελίδα δεν ταιριάζει με το μοντέλο ('+miss.slice(0,3).join(', ')+'…) · κλείσε και ξανάνοιξε τη σελίδα')}
-  const cut=Date.parse(M.trained_to.replace(" ","T")+"Z");const times=all.BTCUSDT.b.t.filter(t=>t>cut);const hist=[];const rows={};let nAll=0,upAll=0,inb=0,nb=0;
+  const cut=Date.parse(M.trained_to.replace(" ","T")+"Z");const use2=tf==="15m"&&M2C;const cut2=use2?Date.parse(M2C.trained_to.replace(" ","T")+"Z"):0;const h2=[];const times=all.BTCUSDT.b.t.filter(t=>t>cut);const hist=[];const rows={};let nAll=0,upAll=0,inb=0,nb=0;
   for(const t of times){const cr=TGF.crossAt(all,SYMS,t,!!cfg.oi);for(const s in cr){const A=all[s],i=A.idx.get(t);if(i<420)continue;const atr=A.X._atr[i];if(!(atr>0)||!(A.b.v[i]>0))continue;
     const x=TGF.vector(M,A.X,i,cr[s]);const p=predict(M,x);const T_=THRS[tf];const sg=p>=T_?1:p<=1-T_?-1:0;const use=!cfg.only||cfg.only.includes(s);
     if(t===latest)rows[s]={s,p,sig:sg,c:A.b.c[i],atr,x,cr:cr[s],i};
+    if(use2&&use){const p2=predict(M2C,x);if(t===latest)rows[s].p2=p2;if(t>cut2){const ok=i+2<A.b.t.length&&A.b.v[i+1]>0&&A.b.v[i+2]>0;h2.push({s,t,p2,m2:Math.sign(A.b.c[i]-A.b.c[i-2]),y:ok?(A.b.c[i+2]>A.b.c[i]?1:0):null})}}
     if(use){const o=outcome(A.b,i,atr,M.N,M.k);if(o){if(o.how==="up"||o.how==="dn"){nAll++;if(o.how==="up")upAll++}
         if(i+M.N<A.b.t.length){nb++;const z=Math.log(A.b.c[i+M.N]/A.b.c[i])/(atr/A.b.c[i]);if(z>=RQ[tf][0]&&z<=RQ[tf][1])inb++}}
       if(sg){if(o&&o.how==="both")o.r=-sg*M.k*atr/A.b.c[i];hist.push({s,t,sig:sg,p,c:A.b.c[i],atr,o})}}}}
-  CACHE[tf]={rows,hist,latest,all,at:Date.now(),missing:SYMS.filter(s=>!all[s]),base:nAll?Math.max(upAll,nAll-upAll)/nAll:NaN,cover:nb?inb/nb:NaN};
+  if(use2)c2Log(rows,latest);CACHE[tf]={rows,hist,h2,latest,all,at:Date.now(),missing:SYMS.filter(s=>!all[s]),base:nAll?Math.max(upAll,nAll-upAll)/nAll:NaN,cover:nb?inb/nb:NaN};
 }
 // ---------- render ----------
 const fmt=x=>!isFinite(x)?"—":x>=1000?x.toLocaleString("el-GR",{maximumFractionDigits:1}):x>=1?x.toFixed(3):x.toPrecision(4);
@@ -132,11 +136,11 @@ function render(){const C=CACHE[cur],cfg=TFS[cur],M=MODELS[cur];if(!C)return;
   $("status").textContent=`Κερί που έκλεισε: ${tstr(closeAt)} · μοντέλο εκπαιδευμένο έως ${M.trained_to.slice(0,10)}`+(C.missing.length?` · χωρίς δεδομένα: ${C.missing.map(nm).join(", ")}`:"");
   let notes="";{const rk=evRiskNow();if(rk.length)notes+=`<div class="note">⚠️ Γεγονός υψηλού κινδύνου: <b>${rk.map(e=>e.country+" "+e.title).join(", ")}</b> (${tstr(rk[0].t)}). Σήματα αυτής της ώρας: καλύτερα έξω.</div>`}if(cfg.chal)notes+=`<div class="note">🧪 <b>4H+M</b> = διεκδικητής: το 4H με τα macro. Τρέχει παράλληλα με το κύριο 4H. Θα αντικαταστήσει το 4H μόνο αν βγει καλύτερο live, μετά από 100+ σήματα.</div>`;if(cfg.only)notes+=`<div class="note">⚠️ <b>15'</b>: μόνο BTC, ETH, SOL και μόνο τις μέρες με 0% fees. Στον έλεγχο ήταν +6 bp ανά σήμα χωρίς fees, αρνητικό με fees.</div>`;
   if(sel==="XAUUSDT"&&isWeekend(closeAt))notes+=`<div class="note">⚠️ Σαββατοκύριακο: η αγορά spot του χρυσού είναι κλειστή. Τα σήματα του XAU αυτές τις ώρες να αγνοούνται.</div>`;$("notes").innerHTML=notes;
-  chart(C,r);
+  chart(C,r);c2Render(C,cfg);
   if(r){const p=r.p,sg=r.sig;const tg=r.c+M.k*r.atr,st=r.c-M.k*r.atr,lo=r.c+RQ[cur][0]*r.atr,hi=r.c+RQ[cur][1]*r.atr;
     $("prh").textContent=`Πρόβλεψη · επόμενα ${M.N} κεριά (${cfg.h})`;
-    $("pred").innerHTML=`<div class="k"><div class="t">Κατεύθυνση</div><div class="v ${p>=.5?"up":"dn"}">${p>=.5?"↑ "+pct(p):"↓ "+pct(1-p)}</div><div class="pb"><i style="width:${p*100}%"></i></div><div class="sm mut">Βάση σύγκρισης (live): ${isFinite(C.base)?pct(C.base):"—"}</div></div>
-     <div class="k"><div class="t">Ποιο χτυπιέται πρώτο</div><div style="margin-top:6px"><b class="up">+1 ATR (${fmt(tg)})</b> <b>${pct(p)}</b></div><div style="margin-top:4px"><b class="dn">−1 ATR (${fmt(st)})</b> <b>${pct(1-p)}</b></div><div class="sm mut" style="margin-top:6px">λήξη μετά από ${M.N} κεριά</div></div>
+    $("pred").innerHTML=`<div class="k"><div class="t">Ποιο επίπεδο χτυπιέται πρώτο στα επόμενα ${M.N} κεριά;</div><div class="v ${p>=.5?"up":"dn"}">${p>=.5?"+1 ATR · "+pct(p):"−1 ATR · "+pct(1-p)}</div><div class="pb"><i style="width:${p*100}%"></i></div><div class="sm mut">εφόσον χτυπηθεί ένα από τα δύο επίπεδα · ιστορικά κανένα δεν χτυπήθηκε μέσα σε ${M.N} κεριά στο ${pct1(NOHIT[cur==="4hm"?"4h":cur])} των περιπτώσεων</div><div class="sm mut">Βάση σύγκρισης (live): ${isFinite(C.base)?pct(C.base):"—"}</div></div>
+     <div class="k"><div class="t">Επίπεδα ±1 ATR (ίδια πιθανότητα)</div><div style="margin-top:6px"><b class="up">+1 ATR (${fmt(tg)})</b> <b>${pct(p)}</b></div><div style="margin-top:4px"><b class="dn">−1 ATR (${fmt(st)})</b> <b>${pct(1-p)}</b></div><div class="sm mut" style="margin-top:6px">λήξη μετά από ${M.N} κεριά</div></div>
      <div class="k"><div class="t">Αναμενόμενο εύρος (90%)</div><div class="v" style="font-size:20px">${fmt(lo)} – ${fmt(hi)}</div><div class="sm mut">${(RQ[cur][0]*r.atr/r.c*100).toFixed(1)}% / +${(RQ[cur][1]*r.atr/r.c*100).toFixed(1)}% · ιστορικό εύρος</div></div>
      <div class="k ${sg>0?"sig":sg<0?"sigd":""}"><div class="t">Σήμα</div><div class="v ${sg>0?"up":sg<0?"dn":"mut"}">${sg>0?"ΙΣΧΥΡΟ ↑":sg<0?"ΙΣΧΥΡΟ ↓":"δεν ξέρω"}</div><div class="sm mut">${sg?"πάνω από το όριο "+pct(THRS[cur]):"κάτω από το όριο "+pct(THRS[cur])+" · καλύτερα έξω"}</div></div>`;
     const V=validity(r,M,closeAt,cfg.ms);
@@ -223,6 +227,35 @@ function exRender(){const el=$("exec");if(!el)return;if(!EXR){el.innerHTML='<p c
    `<p class="sm mut" style="margin:6px 0">Ολοκληρωμένα: ${nS}${pend?` · σε εξέλιξη: ${pend}`:""}${gaps?` · χωρίς πλήρη 15′: ${gaps}`:""} · επιλέξιμα ως post-only: ${nS?elig+" ("+pct(elig/nS)+")":"—"}${nS?`, εκ των οποίων οριακά ${done.filter(x=>x.r.edge).length}`:""}. ${nS<100?"⚠️ Κάτω από 100: τα νούμερα αλλάζουν πολύ ακόμα.":""}</p>
    <div class="scroll"><table><tr><th>Έκδοση</th><th>Όργανο</th><th>Σήμα</th><th>Limit</th><th>Post-only;</th><th>15′</th><th>R 15′</th><th>60′</th><th>R 60′</th><th>R taker</th></tr>${list}</table></div>
    <p class="sm mut" style="margin:8px 0 0">Κανόνες: έκδοση = κλείσιμο του κεριού 4H· limit = τιμή κλεισίματος· στόχος/stop ±1 ATR από αυτή, λήξη σε ${MODELS["4h"].N} κεριά 4H, έλεγχος σε κεριά 15′ (αν stop και fill στο ίδιο 15′ → μετράει stop). Επιλέξιμη ως post-only = το άνοιγμα του 1ου 15′ δεν έχει περάσει ήδη το limit πάνω από 1 bp (αλλιώς η εντολή θα απορριπτόταν και μετράει ως «όχι fill»)· «οριακά» = πέρασε έως 1 bp, μέσα στο spread, δεν ξέρουμε σίγουρα. <b>Εκτιμώμενο fill</b> = η τιμή πέρασε το limit κατά 1 bp μέσα στο παράθυρο· είναι εκτίμηση, όχι πραγματική θέση στην ουρά. Κόστη: maker 2 bp (είσοδος και στόχος), taker 5 bp + 1 bp slippage + μισό spread (BTC/ETH 0,5 bp, λοιπά 2 bp) για stop/λήξη και για το fallback. «fb» = εκτελέστηκε με taker fallback. 1R = 1 ATR. Δεν αλλάζει τα σήματα.</p>`}
+
+// ---------- two-candle close (display only) ----------
+const pct1=x=>(x*100).toFixed(1).replace(".",",")+"%";const nfmt=n=>n.toLocaleString("el-GR");
+const C2CAL={"bins":[{"lo":0,"hi":0.4,"n":794,"up":0.4244,"mp":0.3821},{"lo":0.4,"hi":0.45,"n":18089,"up":0.4403,"mp":0.434},{"lo":0.45,"hi":0.48,"n":33906,"up":0.4711,"mp":0.4665},{"lo":0.48,"hi":0.5,"n":36679,"up":0.4962,"mp":0.4905},{"lo":0.5,"hi":0.52,"n":41127,"up":0.5104,"mp":0.5099},{"lo":0.52,"hi":0.55,"n":43582,"up":0.5286,"mp":0.5333},{"lo":0.55,"hi":0.6,"n":20548,"up":0.5423,"mp":0.5669},{"lo":0.6,"hi":1.0001,"n":2937,"up":0.54,"mp":0.6221}],"n":197662,"ncov":42368,"cov":0.2143,"accm":0.5502,"accb":0.5444,"period":"13/12/2024–31/10/2026"}; // compact 15m two-candle model, walk-forward OOS, BTC/ETH/SOL
+function c2Log(rows,latest){let L=[];try{L=JSON.parse(localStorage.getItem("tg.2c")||"[]")}catch(e){}
+  for(const s in rows){const r=rows[s];if(r.p2==null)continue;if(L.some(e=>e.s===s&&e.t===latest))continue;L.push({s,t:latest,p2:r.p2,at:Date.now()})}
+  L=L.slice(-5000);try{localStorage.setItem("tg.2c",JSON.stringify(L))}catch(e){}}
+function c2Score(C,list){const out=[];for(const e of list){const A=C.all[e.s];if(!A)continue;const i=A.idx.get(e.t);if(i==null||i<2||i+2>=A.b.t.length||!(A.b.v[i+1]>0&&A.b.v[i+2]>0))continue;
+  out.push({p2:e.p2,m2:Math.sign(A.b.c[i]-A.b.c[i-2]),y:A.b.c[i+2]>A.b.c[i]?1:0})}return out}
+function c2Acc(X,base){const n=X.length;if(!n)return null;let a=0,b=0;for(const x of X){if((x.p2>=.5)===(x.y===1))a++;const pb=x.m2<0?base.dn[0]:x.m2>0?base.up[0]:(base.fl?base.fl[0]:.5);if((pb>=.5)===(x.y===1))b++}return{n,a:a/n,b:b/n}}
+function c2Render(C,cfg){const el=$("c2");if(!el)return;const k=cur==="4hm"?"4h":cur;const B=B2C[k],A=C.all[sel];const dur=C2DUR[cur];
+  $("c2h").textContent=`${cfg.lab} · Κλείσιμο σε 2 κεριά (${dur})`;
+  if(!B||!A){el.innerHTML='<p class="mut sm">Χωρίς δεδομένα.</p>';return}
+  const i=A.idx.get(C.latest),c=A.b.c;const m2=i>=2?Math.sign(c[i]-c[i-2]):NaN;const R=m2<0?B.dn:m2>0?B.up:B.fl;const syms=k==="15m"?"BTC, ETH, SOL":`${B.syms} σύμβολα του εργαλείου`;
+  let h=`<div class="k"><div class="t">Ιστορική βάση · κλείσιμο σε 2 κεριά</div><div style="margin-top:6px">${cfg.lab} · <b>${nm(sel)}</b>: τα 2 τελευταία κεριά έκλεισαν συνολικά <b>${m2<0?"χαμηλότερα":m2>0?"ψηλότερα":"στο ίδιο επίπεδο"}</b>. Μετά από αυτό, το κλείσιμο σε ${dur} ήταν ψηλότερα στο <b>${R?pct1(R[0]):"—"}</b> των αντίστοιχων περιπτώσεων.</div>
+   <div class="sm mut" style="margin-top:4px">${R?`${nfmt(R[1])} περιπτώσεις`:""} · ${syms} · ${B.f.split("-").reverse().join("/")}–${B.to.split("-").reverse().join("/")} · κεριά χωρίς όγκο εξαιρούνται. Ιστορική συχνότητα, όχι σήμα αγοράς ή πώλησης.</div></div>`;
+  if(cur==="15m"){const r=C.rows[sel];const X=C2CAL;
+    if(!M2C||!r||r.p2==null){h+=`<p class="sm mut" style="margin:8px 0 0">Η πειραματική ένδειξη του 15′ δεν φόρτωσε.</p>`}
+    else{const p2=r.p2;const bin=X&&X.bins.find(b=>p2>=b.lo&&p2<b.hi);const H=C.h2||[];const done=H.filter(x=>x.y!=null&&(!cfg.only||cfg.only.includes(x.s)));const sc=c2Acc(done,B);
+      let L=[];try{L=JSON.parse(localStorage.getItem("tg.2c")||"[]")}catch(e){}const sl=c2Acc(c2Score(C,L),B);
+      h+=`<div class="k" style="margin-top:10px"><div class="t">15′ · Κλείσιμο σε 2 κεριά (30 λεπτά) · <span class="pill pw">Πειραματική ένδειξη</span></div>
+      <div class="row"><span>Εκτίμηση μοντέλου (${nm(sel)})</span><b class="${p2>=.5?"up":"dn"}">${p2>=.5?"ψηλότερα "+pct1(p2):"χαμηλότερα "+pct1(1-p2)}</b></div>
+      <div class="row"><span>Ιστορική επαλήθευση: όταν το μοντέλο έδωσε ${bin?pct1(bin.lo).replace(",0","")+"–"+pct1(Math.min(bin.hi,1)).replace(",0",""):"—"} για άνοδο, το κλείσιμο ήταν ψηλότερα</span><b>${bin?pct1(bin.up)+" ("+nfmt(bin.n)+")":"—"}</b></div>
+      ${X?`<div class="row"><span>Έντονη ένδειξη (≥55% ή ≤45%): συχνότητα</span><b>${pct1(X.cov)} των προβλέψεων (${nfmt(X.ncov)} / ${nfmt(X.n)})</b></div>
+      <div class="row"><span>Ακρίβεια στις έντονες, ίδιες χρονοσφραγίδες: μοντέλο / αναστροφή</span><b>${pct1(X.accm)} / ${pct1(X.accb)}</b></div>`:""}
+      <div class="row"><span>Μετά το πάγωμα (${M2C.trained_to.slice(0,10)}), επανυπολογισμός: μοντέλο / αναστροφή</span><b>${sc?pct1(sc.a)+" / "+pct1(sc.b)+" ("+nfmt(sc.n)+")":"—"}</b></div>
+      <div class="row"><span>Καταγεγραμμένες σε αυτή τη συσκευή πριν το κλείσιμο: μοντέλο / αναστροφή</span><b>${sl?pct1(sl.a)+" / "+pct1(sl.b)+" ("+nfmt(sl.n)+")":"— (ακόμα καμία ολοκληρωμένη)"}</b></div>
+      <p class="sm mut" style="margin:6px 0 0">Η «εκτίμηση» είναι η πιθανότητα που βγάζει το μοντέλο· η «ιστορική επαλήθευση» είναι πόσο συχνά συνέβη στην πράξη σε προβλέψεις εκτός εκπαίδευσης (BTC/ETH/SOL, ${X?X.period:""}). Το μοντέλο συχνά δείχνει πιο σίγουρο από όσο δικαιολογούν οι παρατηρήσεις. Αναστροφή = κανόνας «μετά από συνολική πτώση 2 κεριών, ψηλότερα». Δεν είναι σήμα συναλλαγής· δεν έχει ελεγχθεί μετά από κόστη.</p></div>`}}
+  el.innerHTML=h}
 // ---------- high-impact events (display + warnings only) ----------
 let EVENTS=null;const EVC={USD:"🇺🇸",EUR:"🇪🇺",GBP:"🇬🇧",JPY:"🇯🇵",CNY:"🇨🇳",CAD:"🇨🇦",AUD:"🇦🇺",NZD:"🇳🇿",CHF:"🇨🇭"};const EV_PRE=3*36e5,EV_POST=36e5;
 async function loadEvents(){try{const r=await fetch("events.json",{cache:"no-cache"});if(!r.ok)throw 0;const j=await r.json();EVENTS=(j.events||[]).map(e=>({...e,t:Date.parse(e.date)})).filter(e=>isFinite(e.t)).sort((a,b)=>a.t-b.t);EVENTS.updated=j.updated}catch(e){EVENTS=[];EVENTS.err=true}try{evRender();if(MODELS&&CACHE[cur])render()}catch(e){}}
