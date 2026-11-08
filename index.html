@@ -40,6 +40,7 @@ tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#142
  <div class="card"><div class="h" id="chh">Γράφημα</div><div id="chart"></div></div>
  <div class="card"><div class="h" id="prh">Πρόβλεψη</div><div class="cards4" id="pred"></div><div id="entry" style="margin-top:10px"></div></div>
  <div class="card"><div class="h">Γιατί · οι παράγοντες που μέτρησαν τώρα</div><div id="why"></div><p class="sm mut" style="margin:8px 0 0">Πόσο έσπρωξε κάθε ομάδα δεικτών την πρόβλεψη (πράσινο: προς άνοδο, κόκκινο: προς πτώση). Υπολογίζεται από τα ίδια τα δέντρα του μοντέλου.</p></div>
+ <div class="card"><div class="h">Κίνδυνος γεγονότων · υψηλού αντίκτυπου</div><div id="events"><p class="mut sm">Φόρτωση…</p></div></div>
 </div><div>
  <div class="card"><div class="h">Καθεστώς αγοράς</div><div id="regime"></div></div>
  <div class="card"><div class="h">Ρευστοποιήσεις · live Binance</div><div id="liq"><p class="mut sm">Σύνδεση…</p></div></div>
@@ -128,7 +129,7 @@ function render(){const C=CACHE[cur],cfg=TFS[cur],M=MODELS[cur];if(!C)return;
   $("sym").innerHTML=list.map(r=>r.s).sort().map(s=>`<option ${s===sel?"selected":""}>${s}</option>`).join("");
   const r=C.rows[sel];const closeAt=C.latest+cfg.ms;
   $("status").textContent=`Κερί που έκλεισε: ${tstr(closeAt)} · μοντέλο εκπαιδευμένο έως ${M.trained_to.slice(0,10)}`+(C.missing.length?` · χωρίς δεδομένα: ${C.missing.map(nm).join(", ")}`:"");
-  let notes="";if(cfg.chal)notes+=`<div class="note">🧪 <b>4H+M</b> = διεκδικητής: το 4H με τα macro. Τρέχει παράλληλα με το κύριο 4H. Θα αντικαταστήσει το 4H μόνο αν βγει καλύτερο live, μετά από 100+ σήματα.</div>`;if(cfg.only)notes+=`<div class="note">⚠️ <b>15'</b>: μόνο BTC, ETH, SOL και μόνο τις μέρες με 0% fees. Στον έλεγχο ήταν +6 bp ανά σήμα χωρίς fees, αρνητικό με fees.</div>`;
+  let notes="";{const rk=evRiskNow();if(rk.length)notes+=`<div class="note">⚠️ Γεγονός υψηλού κινδύνου: <b>${rk.map(e=>e.country+" "+e.title).join(", ")}</b> (${tstr(rk[0].t)}). Σήματα αυτής της ώρας: καλύτερα έξω.</div>`}if(cfg.chal)notes+=`<div class="note">🧪 <b>4H+M</b> = διεκδικητής: το 4H με τα macro. Τρέχει παράλληλα με το κύριο 4H. Θα αντικαταστήσει το 4H μόνο αν βγει καλύτερο live, μετά από 100+ σήματα.</div>`;if(cfg.only)notes+=`<div class="note">⚠️ <b>15'</b>: μόνο BTC, ETH, SOL και μόνο τις μέρες με 0% fees. Στον έλεγχο ήταν +6 bp ανά σήμα χωρίς fees, αρνητικό με fees.</div>`;
   if(sel==="XAUUSDT"&&isWeekend(closeAt))notes+=`<div class="note">⚠️ Σαββατοκύριακο: η αγορά spot του χρυσού είναι κλειστή. Τα σήματα του XAU αυτές τις ώρες να αγνοούνται.</div>`;$("notes").innerHTML=notes;
   chart(C,r);
   if(r){const p=r.p,sg=r.sig;const tg=r.c+M.k*r.atr,st=r.c-M.k*r.atr,lo=r.c+RQ[cur][0]*r.atr,hi=r.c+RQ[cur][1]*r.atr;
@@ -143,7 +144,7 @@ function render(){const C=CACHE[cur],cfg=TFS[cur],M=MODELS[cur];if(!C)return;
       <div><div class="t">Τώρα</div><b style="font-size:18px">${fmt(V.now)}</b> <span class="sm ${V.d>=0?"up":"dn"}">${isFinite(V.d)?(V.d>=0?"+":"")+V.d.toFixed(2)+" ATR":""}</span></div>
       <div><div class="t">Κατάσταση</div><span class="pill ${V.cls}">${V.st}</span></div>
       <div><div class="t">Λήξη αν δεν χτυπήσει τίποτα</div><b>${tstr(V.exp)}</b></div></div>
-      <p class="sm mut" style="margin:6px 0 0">Ισχύει όσο η τιμή είναι μέσα σε ±0,25 ATR από την είσοδο. Αν έχει φύγει προς τον στόχο, ο στόχος είναι πιο κοντά από το stop και το trade δεν είναι αυτό που ελέγχθηκε.</p>`:`<p class="sm mut" style="margin:0">Χωρίς σήμα: καμία είσοδος. Η τιμή κλεισίματος ήταν ${fmt(r.c)} (${tstr(closeAt)}).</p>`;
+      ${(()=>{const r_=evNear(Date.now()-EV_POST,V.exp);return r_.length?`<p class="sm wa" style="margin:6px 0 0">⚠️ Μέσα στη διάρκεια του σήματος: ${r_.slice(0,3).map(e=>e.country+" "+e.title+" ("+tstr(e.t)+")").join(", ")}. Αυξημένος κίνδυνος.</p>`:""})()}<p class="sm mut" style="margin:6px 0 0">Ισχύει όσο η τιμή είναι μέσα σε ±0,25 ATR από την είσοδο. Αν έχει φύγει προς τον στόχο, ο στόχος είναι πιο κοντά από το stop και το trade δεν είναι αυτό που ελέγχθηκε.</p>`:`<p class="sm mut" style="margin:0">Χωρίς σήμα: καμία είσοδος. Η τιμή κλεισίματος ήταν ${fmt(r.c)} (${tstr(closeAt)}).</p>`;
     const ct={};const z=zvec(M,r.x);walk(M,z,ct);const names=znames(M);const g={};for(const k in ct){const f=names[k];const G=GROUPS.find(G=>G[1].test(f));const key=G?G[0]:f;g[key]=(g[key]||0)+ct[k]}
     const arr=Object.entries(g).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,8);const mxa=Math.max(...arr.map(a=>Math.abs(a[1])),1e-9);
     $("why").innerHTML=arr.map(([k,v])=>{const w=Math.abs(v)/mxa*50;return `<div class="why"><span>${k}</span><div class="b"><i style="${v>=0?"left:50%":"right:50%"};width:${w}%;background:${v>=0?"var(--up)":"var(--dn)"}"></i></div><b class="${v>=0?"up":"dn"}" style="text-align:right">${v>=0?"+":""}${v.toFixed(2)}</b></div>`}).join("");
@@ -174,10 +175,23 @@ function render(){const C=CACHE[cur],cfg=TFS[cur],M=MODELS[cur];if(!C)return;
   const S=stats(C.hist),H=C.hist.filter(h=>h.o),pend=C.hist.length-H.length;$("shh").textContent=`Σκιώδης λογαριασμός · ${cfg.lab} · από ${M.trained_to.slice(0,10)}`;
   $("shadow").innerHTML=!S.n?`<p class="mut">Ακόμα κανένα ολοκληρωμένο σήμα${pend?` · ${pend} σε εξέλιξη`:""}.</p>`:
    `<div class="cards4"><div class="k"><div class="t">Ολοκληρωμένα</div><div class="v">${S.n}</div></div><div class="k"><div class="t">Επιτυχία</div><div class="v">${pct(S.win)}</div></div><div class="k"><div class="t">Μέσο / σήμα</div><div class="v ${S.avg>=0?"up":"dn"}">${S.avg.toFixed(1)} bp</div><div class="sm mut">αναμενόμενο από τον έλεγχο: ${EXP[cur]} bp</div></div><div class="k"><div class="t">Καθαρό (−${FEE} bp/trade)</div><div class="v ${S.net>=0?"up":"dn"}">${S.net.toFixed(0)} bp</div></div></div>
-    <p class="sm mut">${S.n<100?"⚠️ Λίγα δείγματα: χρειάζονται 100+ για πρώτο συμπέρασμα. ":""}${pend?pend+" σε εξέλιξη.":""}</p>
-    <div class="scroll"><table><tr><th>Ώρα</th><th>Όργανο</th><th>Σήμα</th><th>Πιθ.</th><th>Έκβαση</th><th>bp</th></tr>${H.slice(-15).reverse().map(h=>`<tr><td>${tstr(h.t+cfg.ms)}</td><td>${nm(h.s)}</td><td class="${h.sig>0?"up":"dn"}">${h.sig>0?"ΑΓΟΡΑ":"ΠΩΛΗΣΗ"}</td><td>${pct(h.p)}</td><td>${h.o.how==="exp"?"λήξη":(h.sig*h.o.r>0?"✔ στόχος":"✖ stop")}</td><td class="${h.sig*h.o.r>=0?"up":"dn"}">${(h.sig*h.o.r*1e4).toFixed(0)}</td></tr>`).join("")}</table></div>`;
+    <p class="sm mut">📅 = σήμα κοντά σε γεγονός υψηλού αντίκτυπου. ${S.n<100?"⚠️ Λίγα δείγματα: χρειάζονται 100+ για πρώτο συμπέρασμα. ":""}${pend?pend+" σε εξέλιξη.":""}</p>
+    <div class="scroll"><table><tr><th>Ώρα</th><th>Όργανο</th><th>Σήμα</th><th>Πιθ.</th><th>Έκβαση</th><th>bp</th></tr>${H.slice(-15).reverse().map(h=>`<tr><td>${tstr(h.t+cfg.ms)}${evNear(h.t+cfg.ms-EV_POST,h.t+cfg.ms+EV_PRE).length?" 📅":""}</td><td>${nm(h.s)}</td><td class="${h.sig>0?"up":"dn"}">${h.sig>0?"ΑΓΟΡΑ":"ΠΩΛΗΣΗ"}</td><td>${pct(h.p)}</td><td>${h.o.how==="exp"?"λήξη":(h.sig*h.o.r>0?"✔ στόχος":"✖ stop")}</td><td class="${h.sig*h.o.r>=0?"up":"dn"}">${(h.sig*h.o.r*1e4).toFixed(0)}</td></tr>`).join("")}</table></div>`;
 }
 
+
+// ---------- high-impact events (display + warnings only) ----------
+let EVENTS=null;const EVC={USD:"🇺🇸",EUR:"🇪🇺",GBP:"🇬🇧",JPY:"🇯🇵",CNY:"🇨🇳",CAD:"🇨🇦",AUD:"🇦🇺",NZD:"🇳🇿",CHF:"🇨🇭"};const EV_PRE=3*36e5,EV_POST=36e5;
+async function loadEvents(){try{const r=await fetch("events.json",{cache:"no-cache"});if(!r.ok)throw 0;const j=await r.json();EVENTS=(j.events||[]).map(e=>({...e,t:Date.parse(e.date)})).filter(e=>isFinite(e.t)).sort((a,b)=>a.t-b.t);EVENTS.updated=j.updated}catch(e){EVENTS=[];EVENTS.err=true}try{evRender();if(MODELS&&CACHE[cur])render()}catch(e){}}
+function evNear(t0,t1){if(!EVENTS)return[];return EVENTS.filter(e=>e.t>=t0&&e.t<=t1)}
+function evRiskNow(){const n=Date.now();return evNear(n-EV_POST,n+EV_PRE)}
+const dur=ms=>{const m=Math.round(Math.abs(ms)/6e4);if(m<60)return m+"'";const h=Math.floor(m/60);if(h<48)return h+"ω "+(m%60)+"'";return Math.floor(h/24)+"μ "+(h%24)+"ω"};
+function evRender(){const el=document.getElementById("events");if(!el)return;if(!EVENTS){el.innerHTML='<p class="mut sm">Φόρτωση…</p>';return}
+  if(EVENTS.err){el.innerHTML='<p class="mut sm">Το ημερολόγιο δεν είναι διαθέσιμο ακόμα. Τα σήματα δουλεύουν κανονικά.</p>';return}
+  const n=Date.now();const list=EVENTS.filter(e=>e.t>n-2*36e5&&e.t<n+8*864e5).slice(0,12);const risk=evRiskNow();
+  el.innerHTML=(risk.length?`<div class="note">⚠️ <b>${risk.map(e=>e.country+" "+e.title).join(", ")}</b> ${risk[0].t>n?"σε "+dur(risk[0].t-n):"μόλις βγήκε"}. Ο κανόνας σου: <b>μένεις έξω</b> γύρω από τα μεγάλα νέα.</div>`:"")+
+   (list.length?list.map(e=>{const past=e.t<n;return `<div class="row${past?" dim":""}"><span>${EVC[e.country]||e.country} <b>${e.title}</b><br><span class="sm mut">${tstr(e.t)}${e.forecast?" · πρόβλ. "+e.forecast:""}${e.previous?" · προηγ. "+e.previous:""}</span></span><span class="pill ${!past&&e.t-n<EV_PRE?"pw":"pn"}">${past?"πριν "+dur(n-e.t):"σε "+dur(e.t-n)}</span></div>`}).join(""):'<p class="mut sm">Κανένα γεγονός υψηλού αντίκτυπου τις επόμενες μέρες.</p>')+
+   `<p class="sm mut" style="margin:8px 0 0">Ενημέρωση: ${EVENTS.updated||"—"} · πηγή: εβδομαδιαίο οικονομικό ημερολόγιο (high impact). Ενημερωτικό, δεν αλλάζει τα σήματα.</p>`}
 // ---------- liquidations (live, display only) ----------
 let LIQ=[];try{LIQ=JSON.parse(localStorage.getItem("tg.liq")||"[]")}catch(e){LIQ=[]}
 let LWS=null,LSTATE="—",LSINCE=Date.now();
@@ -199,7 +213,7 @@ function tick(){const C=CACHE[cur];if(!C){$("cd").textContent="⏱ —";return}c
 async function refresh(tf){try{await load(tf);if(tf===cur)render();else render()}catch(e){if(tf===cur)$("status").textContent="Σφάλμα φόρτωσης: "+e.message+" · ξαναδοκιμάζω σε 1'";setTimeout(()=>refresh(tf),6e4)}}
 async function start(){const T=$("tabs");T.innerHTML="";for(const tf in TFS){const b=document.createElement("button");b.className="btn"+(tf===cur?" on":"");b.textContent=TFS[tf].lab;
   b.onclick=()=>{cur=tf;ls.set("tg.tf",tf);[...T.children].forEach(x=>x.classList.toggle("on",x===b));if(CACHE[tf]&&Date.now()<CACHE[tf].latest+2*TFS[tf].ms+20000)render();else{$("status").textContent="Φόρτωση…";refresh(tf)}};T.appendChild(b)}
-  $("sym").onchange=e=>{sel=e.target.value;ls.set("tg.sym",sel);render()};setInterval(tick,1000);prices();setInterval(prices,15000);liqConnect();liqRender();setInterval(liqRender,10000);$("cd").style.cursor="pointer";$("cd").title="Ανανέωση τώρα";$("cd").onclick=()=>{$("status").textContent="Ανανέωση…";refresh(cur)};
+  $("sym").onchange=e=>{sel=e.target.value;ls.set("tg.sym",sel);render()};setInterval(tick,1000);prices();setInterval(prices,15000);liqConnect();liqRender();setInterval(liqRender,10000);loadEvents();setInterval(loadEvents,6e5);setInterval(evRender,6e4);$("cd").style.cursor="pointer";$("cd").title="Ανανέωση τώρα";$("cd").onclick=()=>{$("status").textContent="Ανανέωση…";refresh(cur)};
   await refresh(cur);for(const tf of Object.keys(TFS))if(tf!==cur&&!CACHE[tf])await refresh(tf);}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&MODELS&&CACHE[cur]&&Date.now()>CACHE[cur].latest+2*TFS[cur].ms+20000)refresh(cur)});
 </script></body></html>
