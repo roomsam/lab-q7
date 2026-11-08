@@ -63,5 +63,19 @@ function crossAt(all,syms,t,useOI){
   return rows;
 }
 function vector(M,X,i,cross){return M.features.map(f=>{if(f in cross)return cross[f];const a=X[f];return a?a[i]:NaN})}
-root.TGF={symFeatures,crossAt,vector};
+
+// Macro (FRED) — must match scripts/macfeat.py (_daily). series: {ID:[[ "YYYY-MM-DD", value ],...]}
+function macroFrame(series){
+  const ids=["DTWEXBGS","DGS10","DGS2","DFII10","T10Y2Y","VIXCLS","BAMLH0A0HYM2","DCOILBRENTEU","SP500","NASDAQCOM"]; // HY only defines the date grid (as in training)
+  const maps={};const dates=new Set();
+  for(const id of ids){maps[id]=new Map();for(const [d,v] of (series[id]||[])){const x=parseFloat(v);if(!Number.isFinite(x))continue;maps[id].set(d,x);dates.add(d)}}
+  const D=[...dates].sort();const col={};for(const id of ids){let last=NaN;col[id]=D.map(d=>{if(maps[id].has(d))last=maps[id].get(d);return last})}
+  const n=D.length,lg=a=>a.map(Math.log),diff=(a,k)=>a.map((x,i)=>i>=k?x-a[i-k]:NaN);
+  const F={m_dxy_c5:diff(lg(col.DTWEXBGS),5),m_dxy_c20:diff(lg(col.DTWEXBGS),20),m_y10_c5:diff(col.DGS10,5),m_ry10:col.DFII10,m_ry10_c5:diff(col.DFII10,5),m_curve:col.T10Y2Y,
+    m_vix:col.VIXCLS,m_vix_c5:diff(lg(col.VIXCLS),5),m_brent_c5:diff(lg(col.DCOILBRENTEU),5),m_spx_c5:diff(lg(col.SP500),5),m_ndx_c5:diff(lg(col.NASDAQCOM),5)};
+  const avail=D.map(d=>Date.parse(d+"T00:00:00Z")+86400000+4*3600000);
+  return{avail,F,dates:D};
+}
+function addMacro(X,b,MF){if(!MF)return;for(const k in MF.F){const v=MF.F[k];X[k]=b.ct.map(ct=>Math.fround(asofBack(MF.avail,v,ct)))}}
+root.TGF={symFeatures,crossAt,vector,macroFrame,addMacro};
 })(typeof module!=="undefined"?module.exports:window);

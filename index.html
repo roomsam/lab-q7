@@ -17,13 +17,14 @@ header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14p
 .h{font-size:11px;letter-spacing:1.4px;color:var(--mut);font-weight:700;text-transform:uppercase;margin:0 0 10px}
 .cards4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}@media(max-width:640px){.cards4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .k{background:#0b111c;border:1px solid var(--line);border-radius:12px;padding:12px}.k .t{font-size:12px;color:var(--mut)}.k .v{font-size:26px;font-weight:800;margin:4px 0}
-.k.sig{border-color:#1f6b3d}.k.sigd{border-color:#7a2626}
+.k{min-width:0;overflow-wrap:anywhere}.k.sig{border-color:#1f6b3d}.k.sigd{border-color:#7a2626}
 .pb{height:8px;border-radius:4px;background:var(--dn);overflow:hidden;margin:6px 0}.pb i{display:block;height:100%;background:var(--up)}
 .row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);gap:10px}.row:last-child{border-bottom:0}
 .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-weight:700;font-size:12px;white-space:nowrap}.pup{background:rgba(34,197,94,.14);color:var(--up)}.pdn{background:rgba(239,68,68,.14);color:var(--dn)}.pn{background:#1c2535;color:var(--mut)}.pw{background:#2a2108;color:var(--warn)}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}th,td{padding:6px 5px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{color:var(--mut);font-weight:650;font-size:11.5px}td:first-child,th:first-child{text-align:left}
 tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#14203a}
 .why{display:grid;grid-template-columns:minmax(120px,1.1fr) 2fr 56px;gap:8px;align-items:center;padding:5px 0}.why .b{height:9px;background:#141c2a;border-radius:5px;position:relative}.why .b i{position:absolute;top:0;bottom:0;border-radius:5px}.why .b:after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:#2b3a52}
+@media(max-width:640px){.k .v{font-size:21px}.why{grid-template-columns:105px minmax(0,1fr) 46px}.wrap{padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}}
 .scroll{overflow-x:auto}svg text{font:11px -apple-system,Inter,sans-serif;fill:#8592a6}
 #gate{max-width:420px;margin:12vh auto}input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0b111c;color:var(--tx);font-size:16px}
 .go{margin-top:10px;width:100%;padding:12px;border-radius:10px;border:0;background:var(--acc);color:#fff;font-weight:700;font-size:16px}
@@ -50,13 +51,14 @@ tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#142
 <script src="features.js"></script>
 <script>
 const SYMS=["AAVEUSDT","ADAUSDT","AVAXUSDT","BCHUSDT","BNBUSDT","BTCUSDT","DOGEUSDT","DOTUSDT","ETHUSDT","HYPEUSDT","LINKUSDT","LTCUSDT","NEARUSDT","PUMPUSDT","RUNEUSDT","SOLUSDT","SUIUSDT","TONUSDT","TRXUSDT","XAUUSDT","XMRUSDT","XRPUSDT","ZECUSDT"];
-const TFS={"15m":{lab:"15'",ms:9e5,only:["BTCUSDT","ETHUSDT","SOLUSDT"],h:"4 ώρες"},"1h":{lab:"1H",ms:36e5,h:"12 ώρες"},"4h":{lab:"4H",ms:144e5,oi:true,h:"24 ώρες"},"1d":{lab:"1D",ms:864e5,h:"5 μέρες"}};
+const TFS={"15m":{lab:"15'",ms:9e5,only:["BTCUSDT","ETHUSDT","SOLUSDT"],h:"4 ώρες"},"1h":{lab:"1H",ms:36e5,h:"12 ώρες"},"4h":{lab:"4H",ms:144e5,oi:true,mac:true,h:"24 ώρες"},"1d":{lab:"1D",ms:864e5,h:"5 μέρες"}};
 const RQ={"15m":[-4.59,4.51],"1h":[-3.92,3.98],"4h":[-2.7,2.78],"1d":[-2.34,2.59]};
-const EXP={"15m":6,"1h":17.6,"4h":20.4,"1d":50.8};
-const THRS={"15m": 0.607, "1h": 0.624, "4h": 0.628, "1d": 0.684}, FEE=8, API="https://fapi.binance.com";
+const EXP={"15m":6,"1h":17.6,"4h":29.0,"1d":50.8};
+const THRS={"15m": 0.607, "1h": 0.624, "4h": 0.663, "1d": 0.684}, FEE=8, API="https://fapi.binance.com";
 const GROUPS=[["Ορμή (κίνηση τιμής)",/^r\d+$/],["Θέση στο εύρος / τάση",/^(pos|ema)\d+$/],["Μεταβλητότητα",/^(vol16|vol64|volr|rng|atrp)$/],["Σχήμα κεριού",/^(body|wick_up|wick_dn)$/],["Όγκος / delta",/^(vz|tb|tb8|cvd16|cvd64)$/],["Funding",/^fund$/],["OI / θέσεις traders",/^(oi_|ttp|tta|gl|tt_vs|taker|mkt_oi)/],["Τι κάνει το BTC",/^btc_/],["Όλη η αγορά (breadth)",/^(breadth|up_share|rs16|rs_rank)/],["Ώρα / μέρα",/^(hr|dow)$/],["Χαρακτήρας νομίσματος",/^sym_id$/]];
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-let PRICES={},PAT=0;async function prices(){try{const a=await j(`${API}/fapi/v1/ticker/price`);for(const x of a)PRICES[x.symbol]=+x.price;PAT=Date.now();if(MODELS&&CACHE[cur])render()}catch(e){}}
+let PRICES={},PAT=0,MACRO=null;async function macro(){if(MACRO&&Date.now()-MACRO.at<36e5)return MACRO;const r=await fetch("macro.json",{cache:"no-cache"});const js=await r.json();MACRO={js,MF:TGF.macroFrame(js.series),at:Date.now()};return MACRO}
+async function prices(){try{const a=await j(`${API}/fapi/v1/ticker/price`);for(const x of a)PRICES[x.symbol]=+x.price;PAT=Date.now();if(MODELS&&CACHE[cur])render()}catch(e){}}
 let MODELS=null,cur=ls.get("tg.tf")||"4h",sel=ls.get("tg.sym")||"BTCUSDT";const CACHE={};const $=id=>document.getElementById(id);
 // ---------- unlock ----------
 async function decrypt(pw){const enc=await (await fetch("models.enc",{cache:"no-cache"})).json();const b=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
@@ -86,9 +88,9 @@ const sig_=s=>1/(1+Math.exp(-s));const predict=(M,x)=>sig_(walk(M,zvec(M,x)));
 function outcome(b,i,atr,N,k){const c=b.c[i],up=c+k*atr,dn=c-k*atr;for(let j=1;j<=N;j++){if(i+j>=b.t.length)return null;const hu=b.h[i+j]>=up,hd=b.l[i+j]<=dn;if(hu&&hd)return{r:NaN,how:"both"};if(hu)return{r:k*atr/c,how:"up"};if(hd)return{r:-k*atr/c,how:"dn"}}return{r:Math.log(b.c[i+N]/c),how:"exp"}}
 async function load(tf){
   const M=MODELS[tf],cfg=TFS[tf];if(tf===cur)$("status").textContent="Φόρτωση δεδομένων "+cfg.lab+"…";
-  const ks=await pool(SYMS,6,s=>klines(s,tf));const fs=await pool(SYMS,6,funding);const ois=cfg.oi?await pool(SYMS,3,oiData):SYMS.map(()=>null);
+  const ks=await pool(SYMS,6,s=>klines(s,tf));const fs=await pool(SYMS,6,funding);const ois=cfg.oi?await pool(SYMS,3,oiData):SYMS.map(()=>null);const MC=cfg.mac?await macro():null;
   const all={};let latest=0;SYMS.forEach((s,i)=>{const b=ks[i];if(b&&b.t.length>=450)latest=Math.max(latest,b.t[b.t.length-1])});
-  SYMS.forEach((s,i)=>{const b=ks[i];if(!b||b.t.length<450||b.t[b.t.length-1]<latest-cfg.ms)return;all[s]={b,X:TGF.symFeatures(b,fs[i],ois[i],tf),idx:new Map(b.t.map((t,k)=>[t,k]))}});
+  SYMS.forEach((s,i)=>{const b=ks[i];if(!b||b.t.length<450||b.t[b.t.length-1]<latest-cfg.ms)return;const X=TGF.symFeatures(b,fs[i],ois[i],tf);if(MC)TGF.addMacro(X,b,MC.MF);all[s]={b,X,idx:new Map(b.t.map((t,k)=>[t,k]))}});
   const cut=Date.parse(M.trained_to.replace(" ","T")+"Z");const times=all.BTCUSDT.b.t.filter(t=>t>cut);const hist=[];const rows={};let nAll=0,upAll=0,inb=0,nb=0;
   for(const t of times){const cr=TGF.crossAt(all,SYMS,t,!!cfg.oi);for(const s in cr){const A=all[s],i=A.idx.get(t);if(i<420)continue;const atr=A.X._atr[i];if(!(atr>0)||!(A.b.v[i]>0))continue;
     const x=TGF.vector(M,A.X,i,cr[s]);const p=predict(M,x);const T_=THRS[tf];const sg=p>=T_?1:p<=1-T_?-1:0;const use=!cfg.only||cfg.only.includes(s);
@@ -152,7 +154,11 @@ function render(){const C=CACHE[cur],cfg=TFS[cur],M=MODELS[cur];if(!C)return;
      <div class="row"><span>BTC τα τελευταία 16 κεριά</span><b class="${btc>=0?"up":"dn"}">${isFinite(btc)?(btc>=0?"+":"")+(btc*100).toFixed(2)+"%":"—"}</b></div>
      <div class="row"><span>Αγορά: νομίσματα σε άνοδο (4 κεριά)</span><b>${pct(cr.up_share)}</b></div>`;
     if(cfg.oi&&isFinite(X.oi_c4[i]))reg+=`<div class="row"><span>OI ${nm(sel)} (4 κεριά)</span><b class="${X.oi_c4[i]>=0?"up":"dn"}">${(X.oi_c4[i]>=0?"+":"")+(X.oi_c4[i]*100).toFixed(1)}%</b></div>`;
-    reg+=`<div class="row"><span class="mut">Κλίμα macro · γεγονότα (CPI/Fed) · options Deribit · ρευστοποιήσεις · αναλυτής AI</span><span class="pill pn">έρχεται</span></div>`;$("regime").innerHTML=reg;
+    if(MACRO){const F=MACRO.MF.F,n=MACRO.MF.dates.length-1,dt=MACRO.MF.dates[n],age=(Date.now()-Date.parse(dt))/864e5;const L=k=>F[k][n];const sg=(v,d=2,m=1,u="")=>isFinite(v)?`<b class="${v>=0?"up":"dn"}">${v>=0?"+":""}${(v*m).toFixed(d)}${u}</b>`:"—";
+      reg+=`<div class="row"><span>VIX</span><b>${isFinite(L("m_vix"))?L("m_vix").toFixed(1):"—"}</b></div><div class="row"><span>Δολάριο (5 μέρες)</span>${sg(L("m_dxy_c5"),2,100,"%")}</div>
+       <div class="row"><span>Απόδοση 10ετούς (5 μέρες)</span>${sg(L("m_y10_c5"),2,1,"")}</div><div class="row"><span>Πραγματική απόδοση 10ετούς</span><b>${isFinite(L("m_ry10"))?L("m_ry10").toFixed(2)+"%":"—"}</b></div>
+       <div class="row"><span>S&amp;P 500 (5 μέρες)</span>${sg(L("m_spx_c5"),2,100,"%")}</div><div class="row"><span class="sm mut">Macro (FRED) έως ${dt}${age>4?' <span class="wa">· παλιά δεδομένα</span>':''}</span><span class="pill pn">${cfg.mac?"μετράει στο 4H":"μόνο ενημερωτικά"}</span></div>`}
+    reg+=`<div class="row"><span class="mut">Γεγονότα (CPI/Fed) · ρευστοποιήσεις · αναλυτής AI</span><span class="pill pn">έρχεται</span></div>`;$("regime").innerHTML=reg;
   }
   const sorted=list.slice().sort((a,b)=>b.p-a.p);$("rsh").textContent=`Σχετική δύναμη · ${sorted.length} όργανα · ${cfg.lab}`;
   const sigs=sorted.filter(x=>x.sig);const nu=sigs.filter(x=>x.sig>0).length,nd=sigs.length-nu;
