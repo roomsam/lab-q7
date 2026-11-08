@@ -42,7 +42,6 @@ tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#142
  <div class="card"><div class="h">Γιατί · οι παράγοντες που μέτρησαν τώρα</div><div id="why"></div><p class="sm mut" style="margin:8px 0 0">Πόσο έσπρωξε κάθε ομάδα δεικτών την πρόβλεψη (πράσινο: προς άνοδο, κόκκινο: προς πτώση). Υπολογίζεται από τα ίδια τα δέντρα του μοντέλου.</p></div>
 </div><div>
  <div class="card"><div class="h">Καθεστώς αγοράς</div><div id="regime"></div></div>
- <div class="card"><div class="h">Ρευστοποιήσεις · live Binance</div><div id="liq"><p class="mut sm">Σύνδεση…</p></div></div>
  <div class="card"><div class="h" id="rsh">Σχετική δύναμη</div><div class="scroll" id="rs"></div></div>
  <div class="card"><div class="h">Πίνακας επιτυχίας · live (δεδομένα που δεν είδε)</div><div class="scroll" id="score"></div></div>
 </div></div>
@@ -56,7 +55,7 @@ const TFS={"15m":{lab:"15'",ms:9e5,only:["BTCUSDT","ETHUSDT","SOLUSDT"],h:"4 ώ�
 const RQ={"15m":[-4.59,4.51],"1h":[-3.92,3.98],"4h":[-2.7,2.78],"1d":[-2.34,2.59]};
 const EXP={"15m":6,"1h":17.6,"4h":29.0,"1d":50.8};
 const THRS={"15m": 0.607, "1h": 0.624, "4h": 0.663, "1d": 0.684}, FEE=8, API="https://fapi.binance.com";
-const GROUPS=[["Ορμή (κίνηση τιμής)",/^r\d+$/],["Θέση στο εύρος / τάση",/^(pos|ema)\d+$/],["Μεταβλητότητα",/^(vol16|vol64|volr|rng|atrp)$/],["Σχήμα κεριού",/^(body|wick_up|wick_dn)$/],["Όγκος / delta",/^(vz|tb|tb8|cvd16|cvd64)$/],["Funding",/^fund$/],["OI / θέσεις traders",/^(oi_|ttp|tta|gl|tt_vs|taker|mkt_oi)/],["Τι κάνει το BTC",/^btc_/],["Όλη η αγορά (breadth)",/^(breadth|up_share|rs16|rs_rank)/],["Ώρα / μέρα",/^(hr|dow)$/],["Χαρακτήρας νομίσματος",/^sym_id$/],["Macro (δολάριο, αποδόσεις, VIX, μετοχές, Brent)",/^m_/]];
+const GROUPS=[["Ορμή (κίνηση τιμής)",/^r\d+$/],["Θέση στο εύρος / τάση",/^(pos|ema)\d+$/],["Μεταβλητότητα",/^(vol16|vol64|volr|rng|atrp)$/],["Σχήμα κεριού",/^(body|wick_up|wick_dn)$/],["Όγκος / delta",/^(vz|tb|tb8|cvd16|cvd64)$/],["Funding",/^fund$/],["OI / θέσεις traders",/^(oi_|ttp|tta|gl|tt_vs|taker|mkt_oi)/],["Τι κάνει το BTC",/^btc_/],["Όλη η αγορά (breadth)",/^(breadth|up_share|rs16|rs_rank)/],["Ώρα / μέρα",/^(hr|dow)$/],["Χαρακτήρας νομίσματος",/^sym_id$/]];
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 let PRICES={},PAT=0,MACRO=null;async function macro(){if(MACRO&&Date.now()-MACRO.at<36e5)return MACRO;const r=await fetch("macro.json",{cache:"no-cache"});const js=await r.json();MACRO={js,MF:TGF.macroFrame(js.series),at:Date.now()};return MACRO}
 async function prices(){try{const a=await j(`${API}/fapi/v1/ticker/price`);for(const x of a)PRICES[x.symbol]=+x.price;PAT=Date.now();if(MODELS&&CACHE[cur])render()}catch(e){}}
@@ -89,10 +88,9 @@ const sig_=s=>1/(1+Math.exp(-s));const predict=(M,x)=>sig_(walk(M,zvec(M,x)));
 function outcome(b,i,atr,N,k){const c=b.c[i],up=c+k*atr,dn=c-k*atr;for(let j=1;j<=N;j++){if(i+j>=b.t.length)return null;const hu=b.h[i+j]>=up,hd=b.l[i+j]<=dn;if(hu&&hd)return{r:NaN,how:"both"};if(hu)return{r:k*atr/c,how:"up"};if(hd)return{r:-k*atr/c,how:"dn"}}return{r:Math.log(b.c[i+N]/c),how:"exp"}}
 async function load(tf){
   const M=MODELS[tf],cfg=TFS[tf];if(tf===cur)$("status").textContent="Φόρτωση δεδομένων "+cfg.lab+"…";
-  const ks=await pool(SYMS,6,s=>klines(s,tf));const fs=await pool(SYMS,6,funding);const ois=cfg.oi?await pool(SYMS,3,oiData):SYMS.map(()=>null);const needMac=M.features.some(f=>f.startsWith("m_"));const MC=needMac?await macro():null;if(needMac&&!MC)throw new Error("λείπουν τα macro");
+  const ks=await pool(SYMS,6,s=>klines(s,tf));const fs=await pool(SYMS,6,funding);const ois=cfg.oi?await pool(SYMS,3,oiData):SYMS.map(()=>null);const MC=cfg.mac?await macro():null;
   const all={};let latest=0;SYMS.forEach((s,i)=>{const b=ks[i];if(b&&b.t.length>=450)latest=Math.max(latest,b.t[b.t.length-1])});
   SYMS.forEach((s,i)=>{const b=ks[i];if(!b||b.t.length<450||b.t[b.t.length-1]<latest-cfg.ms)return;const X=TGF.symFeatures(b,fs[i],ois[i],tf);if(MC)TGF.addMacro(X,b,MC.MF);all[s]={b,X,idx:new Map(b.t.map((t,k)=>[t,k]))}});
-  {const X0=all.BTCUSDT.X;const miss=M.features.filter(f=>!(f in X0)&&!['btc_r1','btc_r4','btc_r16','btc_cvd16','btc_vol16','breadth4','breadth16','up_share','rs16','rs_rank','sym_id','mkt_oi_c4'].includes(f));if(miss.length)throw new Error('η σελίδα δεν ταιριάζει με το μοντέλο ('+miss.slice(0,3).join(', ')+'…) · κλείσε και ξανάνοιξε τη σελίδα')}
   const cut=Date.parse(M.trained_to.replace(" ","T")+"Z");const times=all.BTCUSDT.b.t.filter(t=>t>cut);const hist=[];const rows={};let nAll=0,upAll=0,inb=0,nb=0;
   for(const t of times){const cr=TGF.crossAt(all,SYMS,t,!!cfg.oi);for(const s in cr){const A=all[s],i=A.idx.get(t);if(i<420)continue;const atr=A.X._atr[i];if(!(atr>0)||!(A.b.v[i]>0))continue;
     const x=TGF.vector(M,A.X,i,cr[s]);const p=predict(M,x);const T_=THRS[tf];const sg=p>=T_?1:p<=1-T_?-1:0;const use=!cfg.only||cfg.only.includes(s);
@@ -160,13 +158,13 @@ function render(){const C=CACHE[cur],cfg=TFS[cur],M=MODELS[cur];if(!C)return;
       reg+=`<div class="row"><span>VIX</span><b>${isFinite(L("m_vix"))?L("m_vix").toFixed(1):"—"}</b></div><div class="row"><span>Δολάριο (5 μέρες)</span>${sg(L("m_dxy_c5"),2,100,"%")}</div>
        <div class="row"><span>Απόδοση 10ετούς (5 μέρες)</span>${sg(L("m_y10_c5"),2,1,"")}</div><div class="row"><span>Πραγματική απόδοση 10ετούς</span><b>${isFinite(L("m_ry10"))?L("m_ry10").toFixed(2)+"%":"—"}</b></div>
        <div class="row"><span>S&amp;P 500 (5 μέρες)</span>${sg(L("m_spx_c5"),2,100,"%")}</div><div class="row"><span class="sm mut">Macro (FRED) έως ${dt}${age>4?' <span class="wa">· παλιά δεδομένα</span>':''}</span><span class="pill pn">${cfg.mac?"μετράει στο 4H":"μόνο ενημερωτικά"}</span></div>`}
-    reg+=`<div class="row"><span class="mut">Γεγονότα (CPI/Fed) · αναλυτής AI ειδήσεων</span><span class="pill pn">έρχεται</span></div>`;$("regime").innerHTML=reg;
+    reg+=`<div class="row"><span class="mut">Γεγονότα (CPI/Fed) · ρευστοποιήσεις · αναλυτής AI</span><span class="pill pn">έρχεται</span></div>`;$("regime").innerHTML=reg;
   }
   const sorted=list.slice().sort((a,b)=>b.p-a.p);$("rsh").textContent=`Σχετική δύναμη · ${sorted.length} όργανα · ${cfg.lab}`;
   const sigs=sorted.filter(x=>x.sig);const nu=sigs.filter(x=>x.sig>0).length,nd=sigs.length-nu;
   $("rs").innerHTML=(sigs.length>=4&&Math.max(nu,nd)/sigs.length>=.75?`<div class="note">⚠️ ${Math.max(nu,nd)} από ${sigs.length} σήματα δείχνουν την ίδια κατεύθυνση: στην ουσία ένα στοίχημα στην αγορά, όχι ${sigs.length} ξεχωριστά.</div>`:"")+
    `<table><tr><th>#</th><th>Όργανο</th><th>Πιθ. ↑</th><th>Είσοδος</th><th>Στόχος</th><th>Stop</th><th>Σήμα</th></tr>`+sorted.map((x,k)=>`<tr class="click ${x.s===sel?"sel":""}" data-s="${x.s}"><td>${k+1}</td><td><b>${nm(x.s)}</b></td><td class="${x.p>=.5?"up":"dn"}">${pct(x.p)}</td><td>${x.sig?fmt(x.c):"—"}</td><td>${x.sig?fmt(x.c+x.sig*M.k*x.atr):"—"}</td><td>${x.sig?fmt(x.c-x.sig*M.k*x.atr):"—"}</td><td>${x.sig>0?'<span class="pill pup">ΙΣΧΥΡΟ ↑</span>':x.sig<0?'<span class="pill pdn">ΙΣΧΥΡΟ ↓</span>':'<span class="pill pn">δεν ξέρω</span>'}${x.sig?(()=>{const V=validity(x,M,closeAt,cfg.ms);return V&&V.st!=="✅ ισχύει"?` <span class="pill ${V.cls}" title="${V.st}">${V.st.split(" ")[0]}</span>`:""})():""}</td></tr>`).join("")+"</table>";
-  $("rs").querySelectorAll("tr.click").forEach(tr=>tr.onclick=()=>{sel=tr.dataset.s;ls.set("tg.sym",sel);render();liqRender()});
+  $("rs").querySelectorAll("tr.click").forEach(tr=>tr.onclick=()=>{sel=tr.dataset.s;ls.set("tg.sym",sel);render()});
   let sc=`<table><tr><th>TF</th><th>Σήματα</th><th>Επιτυχία</th><th>Βάση</th><th>Εύρος 90%</th><th>Σύνολο (0% fees)</th></tr>`;
   for(const tf in TFS){const D=CACHE[tf];if(!D){sc+=`<tr><td>${TFS[tf].lab}</td><td colspan="5" class="mut">φορτώνει…</td></tr>`;continue}const S=stats(D.hist);
     sc+=`<tr><td><b>${TFS[tf].lab}</b></td><td>${S.n}</td><td class="${S.n&&S.win>=.5?"up":"dn"}">${S.n?pct(S.win):"—"}</td><td class="mut">${isFinite(D.base)?pct(D.base):"—"}</td><td>${isFinite(D.cover)?pct(D.cover):"—"}</td><td class="${S.R>=0?"up":"dn"}">${S.n?(S.R>=0?"+":"")+S.R.toFixed(1)+"R":"—"}</td></tr>`}
@@ -177,29 +175,12 @@ function render(){const C=CACHE[cur],cfg=TFS[cur],M=MODELS[cur];if(!C)return;
     <p class="sm mut">${S.n<100?"⚠️ Λίγα δείγματα: χρειάζονται 100+ για πρώτο συμπέρασμα. ":""}${pend?pend+" σε εξέλιξη.":""}</p>
     <div class="scroll"><table><tr><th>Ώρα</th><th>Όργανο</th><th>Σήμα</th><th>Πιθ.</th><th>Έκβαση</th><th>bp</th></tr>${H.slice(-15).reverse().map(h=>`<tr><td>${tstr(h.t+cfg.ms)}</td><td>${nm(h.s)}</td><td class="${h.sig>0?"up":"dn"}">${h.sig>0?"ΑΓΟΡΑ":"ΠΩΛΗΣΗ"}</td><td>${pct(h.p)}</td><td>${h.o.how==="exp"?"λήξη":(h.sig*h.o.r>0?"✔ στόχος":"✖ stop")}</td><td class="${h.sig*h.o.r>=0?"up":"dn"}">${(h.sig*h.o.r*1e4).toFixed(0)}</td></tr>`).join("")}</table></div>`;
 }
-
-// ---------- liquidations (live, display only) ----------
-let LIQ=[];try{LIQ=JSON.parse(localStorage.getItem("tg.liq")||"[]")}catch(e){LIQ=[]}
-let LWS=null,LSTATE="—",LSINCE=Date.now();
-function liqConnect(){try{LWS=new WebSocket("wss://fstream.binance.com/ws/!forceOrder@arr");LWS.onopen=()=>{LSTATE="συνδεδεμένο";liqRender()};
-  LWS.onmessage=ev=>{try{const m=JSON.parse(ev.data);const o=m.o;if(!o||!SYMS.includes(o.s))return;const v=(+o.ap||+o.p)*(+o.z||+o.q);LIQ.push({t:+o.T||m.E,s:o.s,side:o.S==="SELL"?"L":"S",v,p:+o.ap||+o.p})}catch(e){}};
-  LWS.onclose=()=>{LSTATE="αποσυνδέθηκε · ξανασύνδεση…";liqRender();setTimeout(liqConnect,5000)};LWS.onerror=()=>{try{LWS.close()}catch(e){}}}catch(e){LSTATE="δεν υποστηρίζεται";}}
-const usd=v=>v>=1e6?"$"+(v/1e6).toFixed(2)+"M":v>=1e3?"$"+(v/1e3).toFixed(0)+"K":"$"+v.toFixed(0);
-function liqRender(){const now=Date.now();LIQ=LIQ.filter(x=>now-x.t<864e5);if(LIQ.length>6000)LIQ=LIQ.slice(-6000);try{localStorage.setItem("tg.liq",JSON.stringify(LIQ))}catch(e){}
-  const el=document.getElementById("liq");if(!el)return;const first=LIQ.length?LIQ[0].t:now;
-  const agg=(ms,f)=>{let L=0,S=0;for(const x of LIQ)if(now-x.t<ms&&(!f||x.s===f)){if(x.side==="L")L+=x.v;else S+=x.v}return[L,S]};
-  const row=(lab,[L,S])=>{const T=L+S;const w=T?L/T*100:50;return `<div class="row"><span>${lab}</span><span style="display:flex;align-items:center;gap:8px"><b class="dn">${usd(L)}</b><span class="pb" style="width:80px;margin:0;background:var(--up)"><i style="width:${w}%;background:var(--dn)"></i></span><b class="up">${usd(S)}</b></span></div>`};
-  const top=LIQ.filter(x=>now-x.t<144e5).sort((a,b)=>b.v-a.v).slice(0,5);
-  el.innerHTML=`<div class="sm mut" style="margin-bottom:4px"><span class="dn">■ long ρευστοποιήθηκαν</span> · <span class="up">■ short ρευστοποιήθηκαν</span></div>`+
-   row("Όλα · 1 ώρα",agg(36e5))+row("Όλα · 4 ώρες",agg(144e5))+row(nm(sel)+" · 4 ώρες",agg(144e5,sel))+
-   (top.length?`<div class="sm mut" style="margin:8px 0 2px">Μεγαλύτερες (4 ώρες)</div>`+top.map(x=>`<div class="row sm"><span>${new Date(x.t).toLocaleTimeString("el-GR",{hour:"2-digit",minute:"2-digit"})} · <b>${nm(x.s)}</b></span><span class="${x.side==="L"?"dn":"up"}">${x.side==="L"?"long":"short"} ${usd(x.v)} @ ${fmt(x.p)}</span></div>`).join(""):"")+
-   `<p class="sm mut" style="margin:8px 0 0">${LSTATE} · καταγραφή από ${new Date(first).toLocaleString("el-GR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}. Μετράει μόνο όσο είναι ανοιχτή η σελίδα σε αυτή τη συσκευή, και η Binance στέλνει μία ρευστοποίηση ανά δευτερόλεπτο ανά νόμισμα, άρα τα ποσά είναι <b>κάτω όριο</b>. Ενημερωτικό, δεν μπαίνει στο μοντέλο.</p>`}
 function tick(){const C=CACHE[cur];if(!C){$("cd").textContent="⏱ —";return}const nxt=C.latest+2*TFS[cur].ms;let s=Math.max(0,Math.round((nxt-Date.now())/1000));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;
   $("cd").textContent=`⏱ επόμενο κερί σε ${h?h+":":""}${String(m).padStart(h?2:1,"0")}:${String(ss).padStart(2,"0")}`;if(s===0&&!C.busy){C.busy=true;setTimeout(()=>refresh(cur),20000)}}
 async function refresh(tf){try{await load(tf);if(tf===cur)render();else render()}catch(e){if(tf===cur)$("status").textContent="Σφάλμα φόρτωσης: "+e.message+" · ξαναδοκιμάζω σε 1'";setTimeout(()=>refresh(tf),6e4)}}
 async function start(){const T=$("tabs");T.innerHTML="";for(const tf in TFS){const b=document.createElement("button");b.className="btn"+(tf===cur?" on":"");b.textContent=TFS[tf].lab;
   b.onclick=()=>{cur=tf;ls.set("tg.tf",tf);[...T.children].forEach(x=>x.classList.toggle("on",x===b));if(CACHE[tf]&&Date.now()<CACHE[tf].latest+2*TFS[tf].ms+20000)render();else{$("status").textContent="Φόρτωση…";refresh(tf)}};T.appendChild(b)}
-  $("sym").onchange=e=>{sel=e.target.value;ls.set("tg.sym",sel);render()};setInterval(tick,1000);prices();setInterval(prices,15000);liqConnect();liqRender();setInterval(liqRender,10000);$("cd").style.cursor="pointer";$("cd").title="Ανανέωση τώρα";$("cd").onclick=()=>{$("status").textContent="Ανανέωση…";refresh(cur)};
+  $("sym").onchange=e=>{sel=e.target.value;ls.set("tg.sym",sel);render()};setInterval(tick,1000);prices();setInterval(prices,15000);$("cd").style.cursor="pointer";$("cd").title="Ανανέωση τώρα";$("cd").onclick=()=>{$("status").textContent="Ανανέωση…";refresh(cur)};
   await refresh(cur);for(const tf of Object.keys(TFS))if(tf!==cur&&!CACHE[tf])await refresh(tf);}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&MODELS&&CACHE[cur]&&Date.now()>CACHE[cur].latest+2*TFS[cur].ms+20000)refresh(cur)});
 </script></body></html>
