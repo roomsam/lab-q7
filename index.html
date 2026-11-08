@@ -194,20 +194,45 @@ function evRender(){const el=document.getElementById("events");if(!el)return;if(
    `<p class="sm mut" style="margin:8px 0 0">Ενημέρωση: ${EVENTS.updated||"—"} · πηγή: εβδομαδιαίο οικονομικό ημερολόγιο (high impact). Ενημερωτικό, δεν αλλάζει τα σήματα.</p>`}
 // ---------- liquidations (live, display only) ----------
 let LIQ=[];try{LIQ=JSON.parse(localStorage.getItem("tg.liq")||"[]")}catch(e){LIQ=[]}
-let LWS=null,LSTATE="—",LSINCE=Date.now();
-function liqConnect(){try{LWS=new WebSocket("wss://fstream.binance.com/market/ws/!forceOrder@arr");LWS.onopen=()=>{LSTATE="συνδεδεμένο";liqRender()};
-  LWS.onmessage=ev=>{try{const m=JSON.parse(ev.data);const o=m.o;if(!o||!SYMS.includes(o.s))return;const v=(+o.ap||+o.p)*(+o.z||+o.q);LIQ.push({t:+o.T||m.E,s:o.s,side:o.S==="SELL"?"L":"S",v,p:+o.ap||+o.p})}catch(e){}};
-  LWS.onclose=()=>{LSTATE="αποσυνδέθηκε · ξανασύνδεση…";liqRender();setTimeout(liqConnect,5000)};LWS.onerror=()=>{try{LWS.close()}catch(e){}}}catch(e){LSTATE="δεν υποστηρίζεται";}}
+let LCOV=[];try{LCOV=JSON.parse(localStorage.getItem("tg.liqcov")||"[]")}catch(e){LCOV=[]}
+let LWS=null,LSTATE="—",LON=false;
+function covMark(){const now=Date.now();if(!LON)return;const l=LCOV[LCOV.length-1];if(l&&now-l[1]<9e4)l[1]=now;else LCOV.push([now,now]);LCOV=LCOV.filter(x=>now-x[1]<864e5).slice(-300)}
+function covMin(ms){const now=Date.now(),a=now-ms;let c=0;for(const [s,e] of LCOV){const x=Math.max(s,a),y=Math.min(e,now);if(y>x)c+=y-x}return Math.round(c/6e4)}
+function liqConnect(){try{LWS=new WebSocket("wss://fstream.binance.com/market/ws/!forceOrder@arr");LWS.onopen=()=>{LSTATE="συνδεδεμένο";LON=true;LCOV.push([Date.now(),Date.now()]);liqRender()};
+  LWS.onmessage=ev=>{try{covMark();const m=JSON.parse(ev.data);const o=m.o;if(!o||!SYMS.includes(o.s))return;const v=(+o.ap||+o.p)*(+o.z||+o.q);LIQ.push({t:+o.T||m.E,s:o.s,side:o.S==="SELL"?"L":"S",v,p:+o.ap||+o.p})}catch(e){}};
+  LWS.onclose=()=>{covMark();LON=false;LSTATE="αποσυνδέθηκε · ξανασύνδεση…";liqRender();setTimeout(liqConnect,5000)};LWS.onerror=()=>{try{LWS.close()}catch(e){}}}catch(e){LSTATE="δεν υποστηρίζεται";}}
 const usd=v=>v>=1e6?"$"+(v/1e6).toFixed(2)+"M":v>=1e3?"$"+(v/1e3).toFixed(0)+"K":"$"+v.toFixed(0);
-function liqRender(){const now=Date.now();LIQ=LIQ.filter(x=>now-x.t<864e5);if(LIQ.length>6000)LIQ=LIQ.slice(-6000);try{localStorage.setItem("tg.liq",JSON.stringify(LIQ))}catch(e){}
-  const el=document.getElementById("liq");if(!el)return;const first=LIQ.length?LIQ[0].t:now;
+// τελευταίο συμβάν (συστάδα 60") για το επιλεγμένο νόμισμα + αντίδραση τιμής στα 5'
+let LEV=null,LEVK=null,LEVBUSY=false,LEVT=0;
+function liqEvent(now){const xs=LIQ.filter(x=>x.s===sel&&now-x.t<144e5).sort((a,b)=>a.t-b.t);if(!xs.length)return null;
+  const cl=[];for(const x of xs){const c=cl[cl.length-1];if(c&&c.side===x.side&&x.t-c.t1<6e4){c.v+=x.v;c.pv+=x.p*x.v;c.t1=x.t}else cl.push({s:x.s,side:x.side,t0:x.t,t1:x.t,v:x.v,pv:x.p*x.v})}
+  const big=cl.filter(c=>c.v>=1e4);const e=(big.length?big:cl)[(big.length?big:cl).length-1];e.p=e.pv/e.v;return e}
+async function liqReact(e){const k=e.s+e.t0;if(LEVBUSY)return;if(LEVK===k&&LEV&&LEV.done)return;if(LEVK===k&&Date.now()-LEVT<6e4)return;LEVBUSY=true;LEVT=Date.now();
+  try{const b0=Math.floor(e.t1/3e5)*3e5;const ks=await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${e.s}&interval=5m&startTime=${b0}&limit=60`).then(r=>r.json());
+    const now=Date.now();const closed=ks.filter(x=>+x[6]<now);const up=e.side==="S";let next="εκκρεμεί",retest="εκκρεμεί",done=false;
+    const n=closed.find(x=>+x[0]>b0);
+    const tol=e.p*5e-4;if(n&&Math.abs(+n[4]-e.p)<=tol){next=`έκλεισε μέσα στη ζώνη (${fmt(+n[4])})`;retest="—";done=closed.length-closed.indexOf(n)>6}else if(n){const c=+n[4];const above=c>e.p;next=(above?"έκλεισε πάνω":"έκλεισε κάτω")+` από τη ζώνη (${fmt(c)})`;
+      const after=closed.filter(x=>+x[0]>+n[0]);let ti=after.findIndex(x=>+x[3]<=e.p+tol&&+x[2]>=e.p-tol);
+      if(ti<0)retest="εκκρεμεί · δεν ξαναήρθε στη ζώνη";else{const rest=after.slice(ti);const holdUp=rest.every(x=>+x[4]>=e.p-tol),holdDn=rest.every(x=>+x[4]<=e.p+tol);
+        if(above&&holdUp)retest="ήρθε στη ζώνη και κράτησε πάνω";else if(!above&&holdDn)retest="ήρθε στη ζώνη και κράτησε κάτω";else retest=(above?"απορρίφθηκε · έκλεισε κάτω από τη ζώνη":"απορρίφθηκε · έκλεισε πάνω από τη ζώνη");done=rest.length>=6}}
+    LEV={next,retest,done};LEVK=k}catch(err){LEV={next:"δεν διαβάστηκε",retest:"δεν διαβάστηκε",done:false};LEVK=k}LEVBUSY=false;liqRender(true)}
+function liqRender(fromReact){const now=Date.now();LIQ=LIQ.filter(x=>now-x.t<864e5);if(LIQ.length>6000)LIQ=LIQ.slice(-6000);covMark();try{localStorage.setItem("tg.liq",JSON.stringify(LIQ));localStorage.setItem("tg.liqcov",JSON.stringify(LCOV))}catch(e){}
+  const el=document.getElementById("liq");if(!el)return;
   const agg=(ms,f)=>{let L=0,S=0;for(const x of LIQ)if(now-x.t<ms&&(!f||x.s===f)){if(x.side==="L")L+=x.v;else S+=x.v}return[L,S]};
-  const row=(lab,[L,S])=>{const T=L+S;const w=T?L/T*100:50;return `<div class="row"><span>${lab}</span><span style="display:flex;align-items:center;gap:8px"><b class="dn">${usd(L)}</b><span class="pb" style="width:80px;margin:0;background:var(--up)"><i style="width:${w}%;background:var(--dn)"></i></span><b class="up">${usd(S)}</b></span></div>`};
-  const top=LIQ.filter(x=>now-x.t<144e5).sort((a,b)=>b.v-a.v).slice(0,5);
-  el.innerHTML=`<div class="sm mut" style="margin-bottom:4px"><span class="dn">■ long ρευστοποιήθηκαν</span> · <span class="up">■ short ρευστοποιήθηκαν</span></div>`+
-   row("Όλα · 1 ώρα",agg(36e5))+row("Όλα · 4 ώρες",agg(144e5))+row(nm(sel)+" · 4 ώρες",agg(144e5,sel))+
+  const row=(lab,[L,S],ms)=>{const T=L+S,cov=Math.min(covMin(ms),ms/6e4),tot=ms/6e4;const w=T?L/T*100:0;
+    const bar=T?`<span class="pb" style="width:80px;margin:0;background:var(--up)"><i style="width:${w}%;background:var(--dn)"></i></span>`:`<span class="pb" style="width:80px;margin:0;background:#2a3446"></span>`;
+    return `<div class="row"><span>${lab}<br><span class="sm mut">διαθέσιμα ${cov}' από ${tot>=60?tot/60+(tot===60?" ώρα":" ώρες"):tot+"'"}</span></span><span style="display:flex;align-items:center;gap:8px"><b class="${T?"dn":"mut"}">${usd(L)}</b>${bar}<b class="${T?"up":"mut"}">${usd(S)}</b></span></div>`};
+  const e=liqEvent(now);let evh="";
+  if(e){const k=e.s+e.t0;if(LEVK!==k){LEV=null;}if(!fromReact&&(!LEV||!LEV.done))liqReact(e);
+    const lab=e.side==="S"?"Short liquidations":"Long liquidations";
+    evh=`<div style="background:#0b111c;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px"><div><b>${e.s}</b> · <span class="${e.side==="S"?"up":"dn"}">${lab} ${usd(e.v)}</span> στα <b>${fmt(e.p)}</b> <span class="sm mut">(${new Date(e.t1).toLocaleTimeString("el-GR",{hour:"2-digit",minute:"2-digit"})})</span></div>`+
+      `<div class="row sm"><span class="mut">Επόμενο 5'</span><span>${LEV?LEV.next:"…"}</span></div><div class="row sm"><span class="mut">Retest</span><span>${LEV?LEV.retest:"…"}</span></div></div>`}
+  else evh=`<div class="sm mut" style="margin-bottom:8px">${nm(sel)}: καμία ρευστοποίηση στις τελευταίες 4 ώρες καταγραφής.</div>`;
+  const top=LIQ.filter(x=>now-x.t<144e5).sort((a,b)=>b.v-a.v).slice(0,5);const first=LCOV.length?LCOV[0][0]:now;
+  el.innerHTML=evh+`<div class="sm mut" style="margin-bottom:4px"><span class="dn">■ long ρευστοποιήθηκαν</span> · <span class="up">■ short ρευστοποιήθηκαν</span> · <span>■ γκρι = χωρίς δεδομένα</span></div>`+
+   row("Όλα · 1 ώρα",agg(36e5),36e5)+row("Όλα · 4 ώρες",agg(144e5),144e5)+row(nm(sel)+" · 4 ώρες",agg(144e5,sel),144e5)+
    (top.length?`<div class="sm mut" style="margin:8px 0 2px">Μεγαλύτερες (4 ώρες)</div>`+top.map(x=>`<div class="row sm"><span>${new Date(x.t).toLocaleTimeString("el-GR",{hour:"2-digit",minute:"2-digit"})} · <b>${nm(x.s)}</b></span><span class="${x.side==="L"?"dn":"up"}">${x.side==="L"?"long":"short"} ${usd(x.v)} @ ${fmt(x.p)}</span></div>`).join(""):"")+
-   `<p class="sm mut" style="margin:8px 0 0">${LSTATE} · καταγραφή από ${new Date(first).toLocaleString("el-GR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}. Μετράει μόνο όσο είναι ανοιχτή η σελίδα σε αυτή τη συσκευή, και η Binance στέλνει μία ρευστοποίηση ανά δευτερόλεπτο ανά νόμισμα, άρα τα ποσά είναι <b>κάτω όριο</b>. Ενημερωτικό, δεν μπαίνει στο μοντέλο.</p>`}
+   `<p class="sm mut" style="margin:8px 0 0">${LSTATE} · καταγραφή από ${new Date(first).toLocaleString("el-GR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} · Μετράει μόνο όσο είναι ανοιχτή η σελίδα σε αυτή τη συσκευή, και η Binance στέλνει μία ρευστοποίηση ανά δευτερόλεπτο ανά νόμισμα, άρα τα ποσά είναι <b>κάτω όριο</b>. «Ζώνη» = μέση τιμή του συμβάντος ±0,05%. Ενημερωτικό, δεν μπαίνει στο μοντέλο.</p>`}
 function tick(){const C=CACHE[cur];if(!C){$("cd").textContent="⏱ —";return}const nxt=C.latest+2*TFS[cur].ms;let s=Math.max(0,Math.round((nxt-Date.now())/1000));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;
   $("cd").textContent=`⏱ επόμενο κερί σε ${h?h+":":""}${String(m).padStart(h?2:1,"0")}:${String(ss).padStart(2,"0")}`;if(s===0&&!C.busy){C.busy=true;setTimeout(()=>refresh(cur),20000)}}
 async function refresh(tf){try{await load(tf);if(tf===cur)render();else render()}catch(e){if(tf===cur)$("status").textContent="Σφάλμα φόρτωσης: "+e.message+" · ξαναδοκιμάζω σε 1'";setTimeout(()=>refresh(tf),6e4)}}
