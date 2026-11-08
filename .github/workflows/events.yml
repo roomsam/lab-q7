@@ -1,0 +1,37 @@
+name: events
+on:
+  schedule:
+    - cron: "47 */6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch economic calendar (high impact)
+        run: |
+          python3 - <<'PY'
+          import urllib.request, json, os, datetime
+          old=json.load(open("events.json")) if os.path.exists("events.json") else {"events":[]}
+          ev={(e["date"],e["title"],e["country"]):e for e in old.get("events",[])}
+          for w in ["thisweek","nextweek"]:
+              try:
+                  req=urllib.request.Request(f"https://nfs.faireconomy.media/ff_calendar_{w}.json",headers={"User-Agent":"Mozilla/5.0"})
+                  for e in json.load(urllib.request.urlopen(req,timeout=60)):
+                      if e.get("impact")=="High":
+                          k=(e["date"],e["title"],e["country"]); ev[k]={"date":e["date"],"title":e["title"],"country":e["country"],"forecast":e.get("forecast",""),"previous":e.get("previous","")}
+              except Exception as x: print("fail",w,x)
+          cut=(datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(days=120)).isoformat()
+          out=sorted([e for e in ev.values() if datetime.datetime.fromisoformat(e["date"]).astimezone(datetime.timezone.utc).isoformat()>=cut],key=lambda e:e["date"])
+          if out!=old.get("events"):
+              json.dump({"updated":datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),"events":out},open("events.json","w"),separators=(",",":"),ensure_ascii=False)
+              print("changed",len(out))
+          PY
+      - name: Commit
+        run: |
+          git config user.name "events-bot"
+          git config user.email "events-bot@users.noreply.github.com"
+          git add events.json
+          git diff --cached --quiet || (git commit -m "events update" && git pull --rebase && git push)
