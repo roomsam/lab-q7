@@ -36,7 +36,7 @@ tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#142
 <header><div class="logo">Trading<b>Gym</b> · Πρόβλεψη</div><select id="sym" class="btn"></select><div id="tabs" style="display:flex;gap:6px"></div><div class="btn" id="cd">⏱ —</div><div class="badge" id="badge">ΠΕΙΡΑΜΑΤΙΚΟ · σε σκιώδη έλεγχο</div></header>
 <div class="sm mut" id="status" style="margin:-6px 0 12px">—</div>
 <div id="notes"></div>
-<div class="card" id="ldCard"><div class="h">⚡ Φόρτωμα αγοράς · ζωντανό ανά 5′ <span id="ldAt" style="text-transform:none;letter-spacing:0"></span> <span style="font:600 10px monospace;border:1px solid var(--line);border-radius:4px;padding:1px 5px;letter-spacing:0">ΔΟΚΙΜΑΣΤΙΚΟ v2.3 · 09/11</span></div>
+<div class="card" id="ldCard"><div class="h">⚡ Φόρτωμα αγοράς · ζωντανό ανά 5′ <span id="ldAt" style="text-transform:none;letter-spacing:0"></span> <span style="font:600 10px monospace;border:1px solid var(--line);border-radius:4px;padding:1px 5px;letter-spacing:0">ΔΟΚΙΜΑΣΤΙΚΟ v2.4 · 09/11</span></div>
 <div id="ldV" class="sm">Φόρτωση…</div>
 <div id="ldS" class="sm mut" style="margin:8px 0 10px"></div>
 <div class="h" style="margin-top:4px">Ακολουθία · τελευταίες 12 ώρες</div><div id="ldSeq"></div>
@@ -354,7 +354,7 @@ async function start(){const T=$("tabs");T.innerHTML="";for(const tf in TFS){con
   await refresh(cur);for(const tf of Object.keys(TFS))if(tf!==cur&&!CACHE[tf])await refresh(tf);}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&MODELS&&CACHE[cur]&&Date.now()>CACHE[cur].latest+2*TFS[cur].ms+20000)refresh(cur)});
 </script>
-<script src="tgload.js?v=22"></script>
+<script src="tgload.js?v=24"></script>
 <script>
 // ===== ⚡ Φόρτωμα αγοράς v2 · ζωντανό ανά 5′ · ξαναπαίζει τις τελευταίες 8ω σε κάθε ανανέωση =====
 (function(){
@@ -415,7 +415,7 @@ function render(D,out,at){
   // --- ακολουθία ---
   const last12=ev.filter(e=>at-e.t<=12*36e5);
   el("ldSeq").innerHTML=last12.length?last12.slice(-14).map(e=>{let x=`<div class="row" style="padding:5px 0"><div><b>${tA(e.t+3e5)}</b> <span class="${e.dir>0?'up':'dn'}">${e.dir>0?'L':'S'}</span> ${e.label}`;
-    if(e.type==="watch")x+=` <span class="mut sm">· ${e.n} σύμβολα · OI ${pc(e.m.moi)} σε 30′ · ${e.dir>0?'αγοραστές':'πωλητές'} ${(e.dir>0?e.m.tk:1/e.m.tk).toFixed(2)}${e.w!=='ισχυρό'?' · '+e.w:''}</span>`;
+    if(e.type==="watch")x+=` <span class="mut sm">· ${e.n} σύμβολα · OI ${pc(e.m.moi)} σε 30′ · ${e.dir>0?'αγοραστές':'πωλητές'} ${(e.dir>0?e.m.tk:1/e.m.tk).toFixed(2)}${e.w==='πρώιμο'?' · <b>πρώιμο</b>, δεν έχει μετρηθεί':e.w!=='ισχυρό'?' · '+e.w:''}</span>`;
     if(e.type==="entry")x+=` <span class="mut sm">· άκρη ${px(e.edge)} · ${e.list.length} σύμβολα</span>`;
     if(e.type==="exh"||e.type==="end")x+=` <span class="mut sm">· ${pc(e.gain)}${e.peak!==undefined?' · κορυφή '+pc(e.peak):''}</span>`;
     return x+`</div><div class="mut sm">BTC ${px(e.px)}</div></div>`}).join(""):'<p class="mut sm">Τίποτα τις τελευταίες 12 ώρες.</p>';

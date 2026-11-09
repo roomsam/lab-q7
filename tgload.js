@@ -6,7 +6,7 @@ const TH={
   sym:{oi:0.003,flat:0.0015,tkAbs:0.90,liqAbs:0.0003,xfer:0.3},                // ανά σύμβολο
   load:{br:0.80,moi:0.003,tk:1.10,ext:1.5},              // 🟡 φόρτωμα (μετρημένο 2021–26)
   liq:{br:0.80,moi:-0.005,tk:1/1.10,ext:1.5},            // 🟡 φόρτωμα short = ρευστοποίηση longs (μετρημένο)
-  absorb:{share:0.5,drop:0.005},                         // 🟡 απορρόφηση μετά από πτώση (ασθενέστερο, 2025–26 ~+6μον)
+  early:{move:0.005,oi:0.001,tk:0.90,top:0.5,ret:0.4,pt:0.2},     // 🟡 πρώιμο: μετά από κίνηση ≥0,5% σε 90′, το OI σταμάτησε να φεύγει, οι takers επιμένουν, μεγάλοι αντίθετα από λιανική σε ≥50%/40% των συμβόλων
   watchMax:72,cancel:0.006,swing:12,sweepMin:0.0008,                     // παρακολούθηση ως 6ω· ακύρωση αν BTC κλείσει 0,6% κάτω από τη βάση
   exh:{near:0.0015,oiDrop:0.002,tk:1.05,minGain:0.003},  // 🔴 εξασθένηση
   end:{drop:0.003,tk:0.9},moveMax:72,                    // ❌ τέλος
@@ -38,12 +38,13 @@ function symStates(D,syms,j){
     out[s]={r30,r15,dO,tk,ext,top,ret,top4,ret4,lqL,lqS,st,c:d.c[j],lo3:Math.min(d.l[j],d.l[j-1],d.l[j-2]),hi3:Math.max(d.h[j],d.h[j-1],d.h[j-2]),oi:o1,ex:EXCL.has(s)}}
   return out}
 function market(D,syms,j,S){
-  let n=0,up=0,liq=0,dn=0,abs_=0,oiN=0,oiT=0,pw=0,B=0,Sv=0,B3=0,S3=0,B1=0,S1=0,exts=[];
+  let n=0,up=0,liq=0,dn=0,abs_=0,oiN=0,oiT=0,pw=0,B=0,Sv=0,B3=0,S3=0,B1=0,S1=0,exts=[],nT=0,tU=0,rD=0,tD=0,rU=0;
   for(const s of syms){const x=S[s];if(!x||x.ex||!fin(x.dO))continue;const d=D[s];n++;
+    if(fin(x.top4)&&fin(x.ret4)){nT++;if(x.top4>=TH.early.pt)tU++;if(x.ret4<=-TH.early.pt)rD++;if(x.top4<=-TH.early.pt)tD++;if(x.ret4>=TH.early.pt)rU++}
     if(x.r30>0&&x.dO>0)up++;if(x.r30<0&&x.dO<0)liq++;if(x.r30<0&&x.dO>0)dn++;if(x.st==="absorb"||x.st==="load"||x.st==="absorbliq"||x.st==="transfer")abs_++;
     oiN+=d.oi[j];oiT+=d.oi[j-6];pw+=x.r30*d.oi[j];const b=sum(d.tbq,j,6);B+=b;Sv+=sum(d.qv,j,6)-b;const b3=sum(d.tbq,j,3);B3+=b3;S3+=sum(d.qv,j,3)-b3;B1+=d.tbq[j]||0;S1+=(d.qv[j]||0)-(d.tbq[j]||0);if(fin(x.ext))exts.push(x.ext)}
   exts.sort((a,b)=>a-b);
-  return {n,br_up:n?up/n:0,br_liq:n?liq/n:0,br_dn:n?dn/n:0,absShare:n?abs_/n:0,moi:oiT?oiN/oiT-1:NaN,mp:oiN?pw/oiN:NaN,tk:Sv?B/Sv:NaN,tk15:S3?B3/S3:NaN,tk5:S1?B1/S1:NaN,oiSum:oiN,ext:exts.length?exts[exts.length>>1]:NaN}}
+  return {n,br_up:n?up/n:0,br_liq:n?liq/n:0,br_dn:n?dn/n:0,absShare:n?abs_/n:0,moi:oiT?oiN/oiT-1:NaN,mp:oiN?pw/oiN:NaN,tk:Sv?B/Sv:NaN,topUp:nT?tU/nT:0,retDn:nT?rD/nT:0,topDn:nT?tD/nT:0,retUp:nT?rU/nT:0,tk15:S3?B3/S3:NaN,tk5:S1?B1/S1:NaN,oiSum:oiN,ext:exts.length?exts[exts.length>>1]:NaN}}
 // ---- επεισόδια ----
 function run(D,syms,opts){
   const B=D.BTCUSDT;const N=B.t.length;const M=[],SS=[];
@@ -55,12 +56,13 @@ function run(D,syms,opts){
     if(side>0){
       if(m.br_up>=TH.load.br&&m.moi>=TH.load.moi&&m.tk>=TH.load.tk&&m.mp>0&&(!fin(m.ext)||m.ext<=TH.load.ext))return {k:"load",t:"🟡 ΦΟΡΤΩΝΕΙ LONG",w:"ισχυρό"};
       if(m.br_dn>=TH.load.br&&m.moi>=TH.load.moi&&m.mp<0)return {k:"trap",t:"⚡ ΠΑΓΙΔΕΥΜΕΝΟΙ SHORTS → πιθανή άνοδος",w:"μέτριο"};
-      if(fin(B.c[j-18])&&B.c[j]/B.c[j-18]-1<=-TH.absorb.drop&&m.absShare>=TH.absorb.share&&m.moi>=-0.001&&Math.abs(m.mp)<0.003)return {k:"absorb",t:"🟡 ΑΠΟΡΡΟΦΗΣΗ μετά από πτώση",w:"ασθενές"};
+      if(fin(B.c[j-18])&&B.c[j]/B.c[j-18]-1<=-TH.early.move&&m.moi>=-TH.early.oi&&m.tk<=TH.early.tk&&m.topUp>=TH.early.top&&m.retDn>=TH.early.ret)return {k:"xfer",t:"🟡 ΑΠΟΡΡΟΦΗΣΗ LONG · μεγάλοι παίρνουν από λιανική",w:"πρώιμο"};
     }else{
       if(m.br_liq>=TH.liq.br&&m.moi<=TH.liq.moi&&m.tk<=TH.liq.tk&&m.mp<0&&(!fin(m.ext)||m.ext>=-TH.liq.ext))return {k:"liq",t:"🟡 ΦΟΡΤΩΝΕΙ SHORT · ρευστοποίηση longs",w:"ισχυρό"};
+      if(fin(B.c[j-18])&&B.c[j]/B.c[j-18]-1>=TH.early.move&&m.moi>=-TH.early.oi&&m.tk>=1/TH.early.tk&&m.topDn>=TH.early.top&&m.retUp>=TH.early.ret)return {k:"dist",t:"🟡 ΔΙΑΝΟΜΗ SHORT · μεγάλοι δίνουν στη λιανική",w:"πρώιμο"};
     }
     return null};
-  const symsFor=(side,j)=>Object.keys(SS[j]).filter(s=>!SS[j][s].ex&&(side>0?SS[j][s].st==="load":SS[j][s].st==="liq"));
+  const symsFor=(side,j,k)=>Object.keys(SS[j]).filter(s=>{const x=SS[j][s];if(x.ex)return false;if(k==="xfer")return x.top4>=TH.early.pt&&x.ret4<=-TH.early.pt;if(k==="dist")return x.top4<=-TH.early.pt&&x.ret4>=TH.early.pt;return side>0?x.st==="load":x.st==="liq"});
   const baseAt=(side,j)=>side>0?Math.min(...B.l.slice(j-6,j+1)):Math.max(...B.h.slice(j-6,j+1));
   for(let j=12;j<N;j++){const m=M[j];if(!m||m.n<15)continue;const c=B.c[j];
     const lo12=Math.min(...B.l.slice(j-TH.swing-2,j-2)),hi12=Math.max(...B.h.slice(j-TH.swing-2,j-2)); // swing πριν το σκούπισμα (εξαιρεί τις 3 τελευταίες)
@@ -71,12 +73,12 @@ function run(D,syms,opts){
         if(ep.phase==="move"){const gain=side*(c/ep.epx-1);ev.push({j,t:B.t[j],dir:side,type:"end",label:side>0?"❌ ΤΕΛΟΣ · ρευστοποίηση στην αγορά — κλείσε το long":"❌ ΤΕΛΟΣ · φορτώνει long η αγορά — κλείσε το short",px:c,gain,peak:side*(ep.ext/ep.epx-1),m})}
         else ev.push({j,t:B.t[j],dir:side,type:"fade",label:"❌ ΑΚΥΡΩΘΗΚΕ · γύρισε η αγορά στην άλλη πλευρά",px:c});
         eps[side]=null;continue}
-      if(!ep){ if(tr){const syms=symsFor(side,j);eps[side]={dir:side,k:tr.k,start:j,last:j,base:baseAt(side,j),oi0:OIS[j],syms,re:0};
+      if(!ep){ if(tr){const syms=symsFor(side,j,tr.k);eps[side]={dir:side,k:tr.k,start:j,last:j,base:baseAt(side,j),oi0:OIS[j],syms,re:0};
           ev.push({j,t:B.t[j],dir:side,type:"watch",k:tr.k,label:tr.t,w:tr.w,px:c,n:syms.length,syms,m})}
         continue}
       if(ep.phase!=="move"){
         // ξανά φόρτωμα ≥45′ μετά: ανανεώνει την παρακολούθηση (νέα βάση, νέος χρόνος)
-        if(tr&&tr.w!=="ασθενές"&&j-ep.last>=6){const syms=symsFor(side,j);ep.k=tr.k;ep.start=j;ep.last=j;ep.base=baseAt(side,j);ep.syms=syms;ep.re++;
+        if(tr&&(tr.w!=="πρώιμο"||ep.k===tr.k)&&j-ep.last>=6){const syms=symsFor(side,j,tr.k);ep.k=tr.k;ep.start=j;ep.last=j;ep.base=baseAt(side,j);ep.syms=syms;ep.re++;
           ev.push({j,t:B.t[j],dir:side,type:"watch",k:tr.k,label:tr.t.replace("ΦΟΡΤΩΝΕΙ","ΦΟΡΤΩΝΕΙ ΞΑΝΑ"),w:tr.w,px:c,n:syms.length,syms,m,re:ep.re});continue}
         if(tr)ep.last=j;
         const failed=side>0?c<ep.base*(1-TH.cancel):c>ep.base*(1+TH.cancel);
@@ -103,8 +105,8 @@ function run(D,syms,opts){
       const interestGone=OIS[j]<OIS[j-3]||(side>0?m.tk15<TH.end.tk:m.tk15>1/TH.end.tk);
       if(stop||(rev&&interestGone)||j-ep.entry>TH.moveMax){
         const baseOK=side>0?c>=ep.base*(1-TH.cancel):c<=ep.base*(1+TH.cancel);
-        const back=stop&&baseOK&&j-ep.start<=TH.watchMax&&!ep.reentered;
-        ev.push({j,t:B.t[j],dir:side,type:"end",label:stop?("❌ STOP · έσπασε την άκρη του fake"+(back?" · η βάση κρατάει, ξανά σε παρακολούθηση":"")):(rev?"❌ ΤΕΛΟΣ · χάθηκε το ενδιαφέρον":"⌛ ΤΕΛΟΣ · 6ω"),px:c,gain,peak:side*(ep.ext/ep.epx-1),m});
+        const back=(stop||gain<0)&&baseOK&&j-ep.start<=TH.watchMax&&!ep.reentered; // χαμένη είσοδος με τη βάση άθικτη: μία ακόμα ευκαιρία
+        ev.push({j,t:B.t[j],dir:side,type:"end",label:(stop?"❌ STOP · έσπασε την άκρη του fake":(rev?"❌ ΤΕΛΟΣ · χάθηκε το ενδιαφέρον":"⌛ ΤΕΛΟΣ · 6ω"))+(back?" · η βάση κρατάει, ξανά σε παρακολούθηση":""),px:c,gain,peak:side*(ep.ext/ep.epx-1),m});
         if(back){ep.phase="watch";ep.reentered=true;delete ep.entry;delete ep.exh}else eps[side]=null}
     }
   }
