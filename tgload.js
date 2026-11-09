@@ -1,9 +1,9 @@
 // TG Φόρτωμα αγοράς — μηχανή v2. Καθαρή JS, ίδια στη σελίδα, στον notifier και στα τεστ.
-// Είσοδος: D = { SYM: {t:[ms άνοιγμα 5′], o,h,l,c,qv,tbq:[...], oi:[...], top:[long share ή NaN], ret:[...], atr4:number} }
+// Είσοδος: D = { SYM: {t:[ms άνοιγμα 5′], o,h,l,c,qv,tbq:[...], oi:[...], top:[long share ή NaN], ret:[...], atr4:number, liqL?,liqS?:[$ ρευστοποιήσεων ανά 5′]} }
 // Όλοι οι πίνακες ίδιου μήκους, ευθυγραμμισμένοι στα ίδια t. Έξοδος: ανά μπάρα καταστάσεις συμβόλων, αγοράς, επεισόδια long/short.
 (function(root){
 const TH={
-  sym:{oi:0.003,flat:0.0015,tkAbs:0.90},                // ανά σύμβολο
+  sym:{oi:0.003,flat:0.0015,tkAbs:0.90,liqAbs:0.0003,xfer:0.3},                // ανά σύμβολο
   load:{br:0.80,moi:0.003,tk:1.10,ext:1.5},              // 🟡 φόρτωμα (μετρημένο 2021–26)
   liq:{br:0.80,moi:-0.005,tk:1/1.10,ext:1.5},            // 🟡 φόρτωμα short = ρευστοποίηση longs (μετρημένο)
   absorb:{share:0.5,drop:0.005},                         // 🟡 απορρόφηση μετά από πτώση (ασθενέστερο, 2025–26 ~+6μον)
@@ -21,20 +21,26 @@ function symStates(D,syms,j){
     const B=sum(d.tbq,j,6),S=sum(d.qv,j,6)-B;const tk=S>0?B/S:NaN;
     const ext=d.atr4>0&&fin(d.c[j-48])?(d.c[j]/d.c[j-48]-1)*d.c[j]/d.atr4:NaN;
     const top=fin(d.top[j])&&fin(d.top[j-6])?(d.top[j]-d.top[j-6])*100:NaN,ret=fin(d.ret[j])&&fin(d.ret[j-6])?(d.ret[j]-d.ret[j-6])*100:NaN;
+    // ρευστοποιήσεις 15′ (δείγμα Binance, $) ως ποσοστό του OI· μεγάλοι/λιανική μεταβολή 4ω σε μονάδες
+    const lqL=d.liqL?sum(d.liqL,j,3):NaN,lqS=d.liqS?sum(d.liqS,j,3):NaN;const lqLp=fin(lqL)&&o1>0?lqL/o1:NaN,lqSp=fin(lqS)&&o1>0?lqS/o1:NaN;
+    const top4=fin(d.top[j])&&fin(d.top[j-48])?(d.top[j]-d.top[j-48])*100:NaN,ret4=fin(d.ret[j])&&fin(d.ret[j-48])?(d.ret[j]-d.ret[j-48])*100:NaN;
     let st="none";
     if(fin(dO)){const T=TH.sym;
       if(r30<=-T.flat&&dO>=T.oi)st="shorts";                 // ⚡ τιμή κάτω, ανοίγουν θέσεις
       else if(r30<=-T.flat&&dO<=-T.oi)st="liq";              // ↓ ρευστοποίηση
       else if(r30>=-T.flat&&dO>=T.oi)st="load";               // ↑ φορτώνει (τιμή επίπεδη/πάνω, OI ↑)
       else if(r30>=T.flat&&dO<=-T.oi)st="cover";              // ↑ κάλυψη (άνοδος χωρίς νέες θέσεις)
+      else if(fin(lqLp)&&lqLp>=T.liqAbs&&r15>=-T.flat&&dO>=-0.001)st="absorbliq";   // ⏸ καίγονται longs, η τιμή δεν πέφτει, το OI κρατάει → κάποιος τα παίρνει
+      else if(fin(lqSp)&&lqSp>=T.liqAbs&&r15<=T.flat&&dO>=-0.001)st="absorbliqS";   // ⏸ καίγονται shorts, η τιμή δεν ανεβαίνει → κάποιος πουλάει πάνω τους
+      else if(fin(top4)&&fin(ret4)&&top4>=T.xfer&&ret4<=-T.xfer&&Math.abs(r30)<=T.flat*2&&Math.abs(dO)<=T.oi)st="transfer"; // ⏸ μεγάλοι παίρνουν από λιανική, OI σταθερό
       else if(fin(tk)&&tk<=T.tkAbs&&r30>=-T.flat&&dO>=-0.001)st="absorb"; // ⏸ πωλητές επιθετικοί, τιμή δεν πέφτει, OI κρατάει
     }
-    out[s]={r30,r15,dO,tk,ext,top,ret,st,c:d.c[j],lo3:Math.min(d.l[j],d.l[j-1],d.l[j-2]),hi3:Math.max(d.h[j],d.h[j-1],d.h[j-2]),oi:o1,ex:EXCL.has(s)}}
+    out[s]={r30,r15,dO,tk,ext,top,ret,top4,ret4,lqL,lqS,st,c:d.c[j],lo3:Math.min(d.l[j],d.l[j-1],d.l[j-2]),hi3:Math.max(d.h[j],d.h[j-1],d.h[j-2]),oi:o1,ex:EXCL.has(s)}}
   return out}
 function market(D,syms,j,S){
   let n=0,up=0,liq=0,dn=0,abs_=0,oiN=0,oiT=0,pw=0,B=0,Sv=0,B3=0,S3=0,B1=0,S1=0,exts=[];
   for(const s of syms){const x=S[s];if(!x||x.ex||!fin(x.dO))continue;const d=D[s];n++;
-    if(x.r30>0&&x.dO>0)up++;if(x.r30<0&&x.dO<0)liq++;if(x.r30<0&&x.dO>0)dn++;if(x.st==="absorb"||x.st==="load")abs_++;
+    if(x.r30>0&&x.dO>0)up++;if(x.r30<0&&x.dO<0)liq++;if(x.r30<0&&x.dO>0)dn++;if(x.st==="absorb"||x.st==="load"||x.st==="absorbliq"||x.st==="transfer")abs_++;
     oiN+=d.oi[j];oiT+=d.oi[j-6];pw+=x.r30*d.oi[j];const b=sum(d.tbq,j,6);B+=b;Sv+=sum(d.qv,j,6)-b;const b3=sum(d.tbq,j,3);B3+=b3;S3+=sum(d.qv,j,3)-b3;B1+=d.tbq[j]||0;S1+=(d.qv[j]||0)-(d.tbq[j]||0);if(fin(x.ext))exts.push(x.ext)}
   exts.sort((a,b)=>a-b);
   return {n,br_up:n?up/n:0,br_liq:n?liq/n:0,br_dn:n?dn/n:0,absShare:n?abs_/n:0,moi:oiT?oiN/oiT-1:NaN,mp:oiN?pw/oiN:NaN,tk:Sv?B/Sv:NaN,tk15:S3?B3/S3:NaN,tk5:S1?B1/S1:NaN,oiSum:oiN,ext:exts.length?exts[exts.length>>1]:NaN}}
