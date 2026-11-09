@@ -1,0 +1,13 @@
+name: probe
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reachability
+        run: |
+          for u in https://fapi.binance.com/fapi/v1/ping https://fapi1.binance.com/fapi/v1/ping https://fapi2.binance.com/fapi/v1/ping https://fapi3.binance.com/fapi/v1/ping "https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=5m&limit=1" https://www.binance.com/fapi/v1/ping https://api.binance.com/api/v3/ping https://data-api.binance.vision/api/v3/ping https://api.bybit.com/v5/market/time https://www.okx.com/api/v5/public/time https://api.coingecko.com/api/v3/ping; do
+            echo "$(curl -s -o /dev/null -m 15 -w '%{http_code}' "$u") $u"
+          done
+          curl -s -m 10 https://ipinfo.io/country || true
