@@ -18,11 +18,12 @@ async function fetchAll(){const now=Date.now();const D={};
 const tA=t=>new Date(t).toLocaleTimeString("el-GR",{hour:"2-digit",minute:"2-digit",hour12:false,timeZone:"Europe/Athens"});
 const pc=x=>(x>0?"+":"")+(x*100).toFixed(2)+"%";const px=v=>v>=1000?Math.round(v).toLocaleString("el-GR"):v>=1?v.toFixed(v>=100?2:3):v.toPrecision(4);
 const nm=s=>s.replace("USDT","");
-function msg(e,D,now){const delay=Math.round((now-(e.t+3e5))/6e4);const hdr=`**${e.label}** · ${tA(e.t+3e5)}${delay>7?` · ⚠️ εκπρόθεσμο +${delay}′`:` · +${delay}′`}\nBTC **${px(e.px)}**`;
+function msg(e,D,now){const m=msg0(e,D,now);return m&&e.score?m+`\n📊 _${e.score}_`:m}
+function msg0(e,D,now){const delay=Math.round((now-(e.t+3e5))/6e4);const hdr=`**${e.label}** · ${tA(e.t+3e5)}${delay>7?` · ⚠️ εκπρόθεσμο +${delay}′`:` · +${delay}′`}\nBTC **${px(e.px)}**`;
   if(e.type==="watch"&&(e.k==="xfer"||e.k==="dist"))return `${hdr} · **ΠΡΩΙΜΟ** · μεγάλοι ${e.k==="xfer"?"▲":"▼"} σε ${Math.round((e.k==="xfer"?e.m.topUp:e.m.topDn)*100)}% των συμβόλων, λιανική ${e.k==="xfer"?"▼":"▲"} σε ${Math.round((e.k==="xfer"?e.m.retDn:e.m.retUp)*100)}% · OI αγοράς ${pc(e.m.moi)} σε 30′ (σταμάτησε να φεύγει) · ${e.k==="xfer"?"πωλητές":"αγοραστές"} ${(e.k==="xfer"?1/e.m.tk:e.m.tk).toFixed(2)}\n${e.syms.map(nm).join(", ")}\n_Πρώιμη ένδειξη, δεν έχει μετρηθεί στο ιστορικό. Παρακολούθηση: περιμένουμε σκούπισμα της άκρης και επιστροφή με νέο OI._`;
   if(e.type==="watch")return `${hdr} · ${e.n} σύμβολα φορτώνουν · OI αγοράς ${pc(e.m.moi)} σε 30′ · ${e.dir>0?"αγοραστές":"πωλητές"} ${(e.dir>0?e.m.tk:1/e.m.tk).toFixed(2)}${e.w!=="ισχυρό"?` · ένδειξη ${e.w}`:""}\n${e.syms.map(nm).join(", ")}\n_Παρακολούθηση. Περιμένουμε σκούπισμα της άκρης και επιστροφή με νέο OI._`;
   if(e.type==="entry"){const L=e.list;const lines=L.slice(0,22).map((z,i)=>`${i+1}. **${nm(z.s)}** ${px(z.ref)} · άκρη ${px(z.edge)} · OI ${pc(z.dO)}`).join("\n");return `${hdr} · άκρη BTC **${px(e.edge)}** (αναφορά stop)\n${L.length} σύμβολα, με σειρά φορτώματος:\n${lines}\n_Scalp: έξοδος στο 🔴 ή στο ❌, όχι 24ωρο. Δεν είναι συμβουλή._`}
-  if(e.type==="exh")return `${hdr} · από την είσοδο ${pc(e.gain)}\n_Νέα άκρα χωρίς νέες θέσεις (OI φεύγει, takers σβήνουν). Ιστορικά 2025–26 άνοδος με OI↓ γύρισε 59–63%. Όχι νέα είσοδος· σκέψου κλείσιμο._`;
+  if(e.type==="exh")return `${hdr} · από την είσοδο ${pc(e.gain)}\n_Νέα άκρα χωρίς νέες θέσεις (OI φεύγει, takers σβήνουν). Όχι νέα είσοδος· σκέψου κλείσιμο._`;
   if(e.type==="end")return `${hdr} · αποτέλεσμα ${pc(e.gain)} · κορυφή ${pc(e.peak)}`;
   if(e.type==="fade")return hdr;
   return null}
