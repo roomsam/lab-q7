@@ -36,7 +36,7 @@ tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#142
 <header><div class="logo">Trading<b>Gym</b> · Πρόβλεψη</div><select id="sym" class="btn"></select><div id="tabs" style="display:flex;gap:6px"></div><div class="btn" id="cd">⏱ —</div><div class="badge" id="badge">ΠΕΙΡΑΜΑΤΙΚΟ · σε σκιώδη έλεγχο</div></header>
 <div class="sm mut" id="status" style="margin:-6px 0 12px">—</div>
 <div id="notes"></div>
-<div class="card" id="ldCard"><div class="h">⚡ Φόρτωμα αγοράς · ζωντανό ανά 5′ <span id="ldAt" style="text-transform:none;letter-spacing:0"></span> <span style="font:600 10px monospace;border:1px solid var(--line);border-radius:4px;padding:1px 5px;letter-spacing:0">ΔΟΚΙΜΑΣΤΙΚΟ v2.1 · 09/11</span></div>
+<div class="card" id="ldCard"><div class="h">⚡ Φόρτωμα αγοράς · ζωντανό ανά 5′ <span id="ldAt" style="text-transform:none;letter-spacing:0"></span> <span style="font:600 10px monospace;border:1px solid var(--line);border-radius:4px;padding:1px 5px;letter-spacing:0">ΔΟΚΙΜΑΣΤΙΚΟ v2.2 · 09/11</span></div>
 <div id="ldV" class="sm">Φόρτωση…</div>
 <div id="ldS" class="sm mut" style="margin:8px 0 10px"></div>
 <div class="h" style="margin-top:4px">Ακολουθία · τελευταίες 12 ώρες</div><div id="ldSeq"></div>
@@ -354,7 +354,7 @@ async function start(){const T=$("tabs");T.innerHTML="";for(const tf in TFS){con
   await refresh(cur);for(const tf of Object.keys(TFS))if(tf!==cur&&!CACHE[tf])await refresh(tf);}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&MODELS&&CACHE[cur]&&Date.now()>CACHE[cur].latest+2*TFS[cur].ms+20000)refresh(cur)});
 </script>
-<script src="tgload.js?v=21"></script>
+<script src="tgload.js?v=22"></script>
 <script>
 // ===== ⚡ Φόρτωμα αγοράς v2 · ζωντανό ανά 5′ · ξαναπαίζει τις τελευταίες 8ω σε κάθε ανανέωση =====
 (function(){
@@ -397,6 +397,7 @@ async function fetchAll(){
 function spark(a,w,h,col){const v=a.filter(fin);if(v.length<2)return"";let mn=Math.min(...v),mx=Math.max(...v);if(mx===mn)mx=mn+1e-9;const n=a.length;
   const pts=a.map((y,i)=>fin(y)?`${(i/(n-1)*w).toFixed(1)},${(h-(y-mn)/(mx-mn)*(h-2)-1).toFixed(1)}`:null).filter(Boolean).join(" ");
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.4"/></svg>`}
+const DOT={load:'🟢',absorbliq:'🟡',absorbliqS:'🟡',transfer:'🟡',absorb:'🟡',liq:'🔴',shorts:'⚡',cover:'⚪',none:'⚪'};
 const STW={load:['↑ φορτώνει','up'],absorbliq:['⏸ απορρόφηση ρευστοποιήσεων longs','wa'],absorbliqS:['⏸ καίγονται shorts, δεν ανεβαίνει','wa'],transfer:['⏸ απορρόφηση · μεγάλοι από λιανική','wa'],absorb:['⏸ απορρόφηση · πωλητές χωρίς πτώση','wa'],liq:['↓ ρευστοποίηση','dn'],shorts:['⚡ shorts ανοίγουν','wa'],cover:['↑ κάλυψη','mut'],none:['·','mut']};
 const ORD={load:0,absorbliq:1,transfer:2,absorb:3,absorbliqS:4,shorts:5,none:6,cover:7,liq:8};
 const usd=v=>!fin(v)||v<=0?'—':v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?Math.round(v/1e3)+'k':Math.round(v)+'';
@@ -427,7 +428,7 @@ function render(D,out,at){
   const pctTxt=(s,k,x)=>{const p=pctOf(PCT.v[s]&&PCT.v[s][k],x);return fin(p)?`<span class="mut sm">${p}ο</span>`:''};
   el("ldT").innerHTML=`<table><thead><tr><th>Σύμβολο</th><th style="text-align:left">Τιμή 3ω</th><th style="text-align:left">OI 3ω</th><th>Τιμή 30′</th><th>OI 30′</th><th>Αγ./πωλ.</th><th>Μεγάλοι 4ω</th><th>Λιανική 4ω</th><th>Ρευστ. 15′ L/S</th><th style="text-align:left">Κατάσταση</th></tr></thead><tbody>`+
     rows.map(([s,x])=>{const d=D[s];const cs=d.c.slice(-SPARK),os=d.oi.slice(-SPARK);const [w,cl]=x.ex?['εκτός καλαθιού','mut']:STW[x.st];const j_=d.c.length-1;
-      return `<tr><td><b>${s.replace("USDT","")}</b></td><td style="text-align:left">${spark(cs,96,22,x.r30>0?'#22c55e':'#ef4444')}</td><td style="text-align:left">${spark(os,96,22,fin(x.dO)&&x.dO>0?'#3b82f6':'#8592a6')}</td><td class="${x.r30>0?'up':x.r30<0?'dn':''}">${pc(x.r30)}</td><td class="${x.dO>0?'up':x.dO<0?'dn':''}">${pc(x.dO)}</td><td>${fin(x.tk)?x.tk.toFixed(2):'—'}</td><td>${arrow(x.top4)} ${pctTxt(s,'top',d.top[j_])}</td><td>${arrow(x.ret4,true)} ${pctTxt(s,'ret',d.ret[j_])}</td><td class="sm">${window.__lqHas?`<span class="dn">${usd(x.lqL)}</span>/<span class="up">${usd(x.lqS)}</span>`:'<span class="mut">—</span>'}</td><td style="text-align:left" class="${cl}">${w}</td></tr>`}).join("")+"</tbody></table>";
+      return `<tr><td>${x.ex?'<span class="mut">·</span>':DOT[x.st]} <b>${s.replace("USDT","")}</b></td><td style="text-align:left">${spark(cs,96,22,x.r30>0?'#22c55e':'#ef4444')}</td><td style="text-align:left">${spark(os,96,22,fin(x.dO)&&x.dO>0?'#3b82f6':'#8592a6')}</td><td class="${x.r30>0?'up':x.r30<0?'dn':''}">${pc(x.r30)}</td><td class="${x.dO>0?'up':x.dO<0?'dn':''}">${pc(x.dO)}</td><td>${fin(x.tk)?x.tk.toFixed(2):'—'}</td><td>${arrow(x.top4)} ${pctTxt(s,'top',d.top[j_])}</td><td>${arrow(x.ret4,true)} ${pctTxt(s,'ret',d.ret[j_])}</td><td class="sm">${window.__lqHas?`<span class="dn">${usd(x.lqL)}</span>/<span class="up">${usd(x.lqS)}</span>`:'<span class="mut">—</span>'}</td><td style="text-align:left" class="${cl}">${w}</td></tr>`}).join("")+"</tbody></table>";
   const cnt={};for(const [s,x] of rows)if(!x.ex)cnt[x.st]=(cnt[x.st]||0)+1;const absN=(cnt.absorb||0)+(cnt.absorbliq||0)+(cnt.transfer||0);
   el("ldK").innerHTML=`<span class="up">↑ φορτώνουν ${cnt.load||0}</span> · <span class="wa">⏸ απορρόφηση ${absN}${cnt.absorbliq?' (ρευστοπ. '+cnt.absorbliq+')':''}${cnt.transfer?' (μεγάλοι '+cnt.transfer+')':''}</span> · <span class="dn">↓ ρευστοποίηση ${cnt.liq||0}</span> · <span class="wa">⚡ shorts ανοίγουν ${cnt.shorts||0}</span> · <span class="mut">↑ κάλυψη ${cnt.cover||0}</span> · OI αγοράς 30′ <b>${pc(m.moi)}</b> · αγοραστές/πωλητές 30′ <b>${fin(m.tk)?m.tk.toFixed(2):'—'}</b> · έχει τρέξει 4ω <b>${fin(m.ext)?m.ext.toFixed(2):'—'} ATR</b>${window.__lqHas?'':' · <span class="mut">ρευστοποιήσεις: χωρίς δεδομένα ακόμα (γεμίζουν όσο η σελίδα είναι ανοιχτή)</span>'}`;
   // --- ημερολόγιο ---
