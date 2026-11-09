@@ -45,6 +45,21 @@ function market(D,syms,j,S){
     oiN+=d.oi[j];oiT+=d.oi[j-6];pw+=x.r30*d.oi[j];const b=sum(d.tbq,j,6);B+=b;Sv+=sum(d.qv,j,6)-b;const b3=sum(d.tbq,j,3);B3+=b3;S3+=sum(d.qv,j,3)-b3;B1+=d.tbq[j]||0;S1+=(d.qv[j]||0)-(d.tbq[j]||0);if(fin(x.ext))exts.push(x.ext)}
   exts.sort((a,b)=>a-b);
   return {n,br_up:n?up/n:0,br_liq:n?liq/n:0,br_dn:n?dn/n:0,absShare:n?abs_/n:0,moi:oiT?oiN/oiT-1:NaN,mp:oiN?pw/oiN:NaN,tk:Sv?B/Sv:NaN,topUp:nT?tU/nT:0,retDn:nT?rD/nT:0,topDn:nT?tD/nT:0,retUp:nT?rU/nT:0,tk15:S3?B3/S3:NaN,tk5:S1?B1/S1:NaN,oiSum:oiN,ext:exts.length?exts[exts.length>>1]:NaN}}
+// ---- σκορ: τι έκανε ιστορικά κάθε σήμα (2021-12 → 2026-10, 22 crypto). Πίνακας σκορ, όχι φίλτρο. ----
+// «ήρθε η κίνηση» = +0,5% προς την κατεύθυνση πριν −0,5% αντίθετα, εντός 4ω · [με σήμα, τυχαία ίδια ώρα] ανά συνεδρία (UTC)
+const HIST={long:[[47,38],[44,35],[42,37],[44,39],[48,45],[48,41]],short:[[51,39],[51,39],[50,34],[51,39],[55,45],[49,40]]};
+const SESSN=["πριν την Ασία","άνοιγμα Ασίας","Ασία","Λονδίνο","Αμερική","βράδυ ΗΠΑ"];
+const sessOf=t=>{const h=new Date(t+3e5).getUTCHours();return h>=22?0:h<2?1:h<7?2:h<12?3:h<16?4:5};
+function scoreOf(e){
+  if(e.type==="watch"){const i=sessOf(e.t);
+    if(e.k==="load"){const h=HIST.long[i];return `η κίνηση ήρθε ${h[0]}% (τυχαία ${h[1]}%) · ${SESSN[i]}`}
+    if(e.k==="liq"){const h=HIST.short[i];return `η κίνηση ήρθε ${h[0]}% (τυχαία ${h[1]}%) · ${SESSN[i]}`}
+    if(e.k==="trap")return "η πτώση συνεχίστηκε μόνο 6–20% (τυχαία 40–46%)";
+    if(e.k==="xfer")return "δεν έχει μετρηθεί· παρόμοιο μοτίβο 2025–26: άνοδος 48–51% (τυχαία 42%), πριν το 2025 δεν στεκόταν";
+    if(e.k==="dist")return "δεν έχει μετρηθεί· παρόμοιο μοτίβο 2025–26: πτώση 51–56% (τυχαία 42–44%)"}
+  if(e.type==="entry")return "παρόμοιος κανόνας scalp: κέρδος στην έξοδο 36–49%, stop 32–47% (τυχαία είσοδος 26–30%)· ρυθμισμένος πάνω στις 9/11";
+  if(e.type==="exh")return e.dir>0?"άνοδος με OI↓ γύρισε σε πτώση 59–63% το 2025–26 (με OI↑ 39–40%)":"το αντίστοιχο για πτώση δεν έχει μετρηθεί";
+  return ""}
 // ---- επεισόδια ----
 function run(D,syms,opts){
   const B=D.BTCUSDT;const N=B.t.length;const M=[],SS=[];
@@ -77,12 +92,17 @@ function run(D,syms,opts){
           ev.push({j,t:B.t[j],dir:side,type:"watch",k:tr.k,label:tr.t,w:tr.w,px:c,n:syms.length,syms,m})}
         continue}
       if(ep.phase!=="move"){
-        // ξανά φόρτωμα ≥45′ μετά: ανανεώνει την παρακολούθηση (νέα βάση, νέος χρόνος)
+        // πρώιμη παρακολούθηση: το κανονικό 🟡 την επιβεβαιώνει αμέσως (νέα βάση, νέος χρόνος)· ως τότε δεν δίνει 🎯
+        const early=ep.k==="xfer"||ep.k==="dist";
+        if(early&&tr&&tr.w!=="πρώιμο"){const syms=symsFor(side,j,tr.k);ep.k=tr.k;ep.start=j;ep.last=j;ep.base=baseAt(side,j);ep.syms=syms;ep.confirmed=true;
+          ev.push({j,t:B.t[j],dir:side,type:"watch",k:tr.k,label:tr.t+" · επιβεβαιώνει το πρώιμο",w:tr.w,px:c,n:syms.length,syms,m});continue}
+        // ξανά φόρτωμα ≥30′ μετά: ανανεώνει την παρακολούθηση (νέα βάση, νέος χρόνος)
         if(tr&&(tr.w!=="πρώιμο"||ep.k===tr.k)&&j-ep.last>=6){const syms=symsFor(side,j,tr.k);ep.k=tr.k;ep.start=j;ep.last=j;ep.base=baseAt(side,j);ep.syms=syms;ep.re++;
           ev.push({j,t:B.t[j],dir:side,type:"watch",k:tr.k,label:tr.t.replace("ΦΟΡΤΩΝΕΙ","ΦΟΡΤΩΝΕΙ ΞΑΝΑ"),w:tr.w,px:c,n:syms.length,syms,m,re:ep.re});continue}
         if(tr)ep.last=j;
         const failed=side>0?c<ep.base*(1-TH.cancel):c>ep.base*(1+TH.cancel);
         if(failed||j-ep.start>TH.watchMax){ev.push({j,t:B.t[j],dir:side,type:"fade",label:failed?"❌ ΑΚΥΡΩΘΗΚΕ · έσπασε τη βάση":"⌛ ΕΣΒΗΣΕ · 6ω χωρίς κίνηση",px:c});eps[side]=null;continue}
+        if(early)continue; // περιμένει επιβεβαίωση
         const sweep=side>0?Math.min(B.l[j-2],B.l[j-1],B.l[j])<lo12*(1-TH.sweepMin):Math.max(B.h[j-2],B.h[j-1],B.h[j])>hi12*(1+TH.sweepMin);
         const back=side>0?(c>lo12&&c>B.c[j-1]):(c<hi12&&c<B.c[j-1]);
         const oiOK=side>0?OIS[j]>OIS[j-2]:OIS[j]<=OIS[j-2]*1.001;
@@ -111,6 +131,7 @@ function run(D,syms,opts){
     }
   }
   for(const side of [1,-1]){const ep=eps[side];if(ep)ev.push({j:N-1,t:B.t[N-1],dir:side,type:"open",phase:ep.phase||"watch",ep})}
+  for(const e of ev)e.score=scoreOf(e);
   ev.sort((a,b)=>a.j-b.j||a.dir-b.dir);
   return {ev,M,SS,N}}
 root.TGLOAD={run,symStates,market,TH,EXCL};
