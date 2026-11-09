@@ -1,0 +1,37 @@
+name: load-alerts
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      test:
+        description: "Στείλε δοκιμαστικό μήνυμα"
+        type: boolean
+        default: false
+concurrency: load-alerts
+permissions:
+  contents: read
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/cache/restore@v4
+        with:
+          path: .notify
+          key: load-state-${{ github.run_id }}
+          restore-keys: load-state-
+      - run: node notify/notify_load.js
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          TEST_MSG: ${{ inputs.test && '1' || '0' }}
+          STATE_FILE: .notify/load.json
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: .notify
+          key: load-state-${{ github.run_id }}
