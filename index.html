@@ -36,12 +36,16 @@ tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#142
 <header><div class="logo">Trading<b>Gym</b> · Πρόβλεψη</div><select id="sym" class="btn"></select><div id="tabs" style="display:flex;gap:6px"></div><div class="btn" id="cd">⏱ —</div><div class="badge" id="badge">ΠΕΙΡΑΜΑΤΙΚΟ · σε σκιώδη έλεγχο</div></header>
 <div class="sm mut" id="status" style="margin:-6px 0 12px">—</div>
 <div id="notes"></div>
-<div class="card" id="ldCard"><div class="h">⚡ Φόρτωμα αγοράς · ζωντανό ανά 5′ <span id="ldAt" style="text-transform:none;letter-spacing:0"></span> <span style="font:600 10px monospace;border:1px solid var(--line);border-radius:4px;padding:1px 5px;letter-spacing:0">ΔΟΚΙΜΑΣΤΙΚΟ v1 · 09/11</span></div>
-<div id="ldV" class="sm mut">Φόρτωση…</div><div id="ldS" class="sm mut" style="margin:8px 0"></div>
-<div class="cards4" id="ldK" style="grid-template-columns:repeat(6,minmax(0,1fr))"></div>
-<details style="margin-top:10px"><summary class="sm" style="cursor:pointer;color:var(--mut)">Όλα τα σύμβολα · ταξινόμηση κατά χτίσιμο OI (τα 3 πρώτα = τα πιο φορτωμένα)</summary><div class="scroll" id="ldT" style="max-height:340px;overflow-y:auto;margin-top:8px"></div></details>
-<details style="margin-top:8px"><summary class="sm" style="cursor:pointer;color:var(--mut)">Ημερολόγιο φορτωμάτων (σε αυτή τη συσκευή)</summary><div id="ldL" style="margin-top:8px"></div></details>
-<p class="sm mut" style="margin:8px 0 0">Διαβάζει τιμή, open interest και επιθετικούς αγοραστές/πωλητές (taker) ανά 5′ σε 22 crypto. 🟡 = φόρτωμα όπως μετρήθηκε στο ιστορικό 2021–26 (η κίνηση ήρθε 42–56% των φορών, έναντι 34–45% τυχαία). ⚡ = shorts ανοίγουν σε πτώση (ιστορικά η πτώση συνεχίστηκε μόνο 6–20%). 🔴 = η κίνηση έχει τρέξει και φεύγει το ενδιαφέρον. Δεν αλλάζει το μοντέλο 4H· είναι ξεχωριστό στρώμα. <span id="ldErr" class="wa"></span></p></div>
+<div class="card" id="ldCard"><div class="h">⚡ Φόρτωμα αγοράς · ζωντανό ανά 5′ <span id="ldAt" style="text-transform:none;letter-spacing:0"></span> <span style="font:600 10px monospace;border:1px solid var(--line);border-radius:4px;padding:1px 5px;letter-spacing:0">ΔΟΚΙΜΑΣΤΙΚΟ v2 · 09/11</span></div>
+<div id="ldV" class="sm">Φόρτωση…</div>
+<div id="ldS" class="sm mut" style="margin:8px 0 10px"></div>
+<div class="h" style="margin-top:4px">Ακολουθία · τελευταίες 12 ώρες</div><div id="ldSeq"></div>
+<div id="ldEntry"></div>
+<div class="h" style="margin-top:12px">Κάθε σύμβολο · ποιο φορτώνει (τιμή & OI, 3 ώρες · ταξινόμηση κατά χτίσιμο OI)</div>
+<div id="ldK" class="sm mut" style="margin-bottom:6px"></div>
+<div class="scroll" id="ldT" style="max-height:560px;overflow-y:auto"></div>
+<details style="margin-top:8px"><summary class="sm" style="cursor:pointer;color:var(--mut)">Ημερολόγιο (σε αυτή τη συσκευή) · τι είπε και τι έκανε το BTC μετά</summary><div id="ldL" style="margin-top:8px"></div></details>
+<p class="sm mut" style="margin:8px 0 0">🟡 φόρτωμα → παρακολούθηση · 🎯 είσοδος μετά από σκούπισμα της άκρης και επιστροφή με νέο OI (η άκρη του fake = αναφορά stop) · 🔴 εξασθένηση: νέα άκρα ενώ το OI φεύγει · ❌ τέλος: χάθηκε το ενδιαφέρον ή ρευστοποίηση στην άλλη πλευρά. Ξεχωριστό στρώμα από το μοντέλο 4H, δεν το αλλάζει. Μετρημένο 2021–26 σε 22 crypto· η απορρόφηση σημειώνεται ως ασθενέστερη. <span id="ldErr" class="wa"></span></p></div>
 <div class="grid"><div>
  <div class="card"><div class="h" id="chh">Γράφημα</div><div id="chart"></div></div>
  <div class="card"><div class="h" id="prh">Πρόβλεψη</div><div class="cards4" id="pred"></div><div id="entry" style="margin-top:10px"></div></div>
@@ -350,78 +354,79 @@ async function start(){const T=$("tabs");T.innerHTML="";for(const tf in TFS){con
   await refresh(cur);for(const tf of Object.keys(TFS))if(tf!==cur&&!CACHE[tf])await refresh(tf);}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&MODELS&&CACHE[cur]&&Date.now()>CACHE[cur].latest+2*TFS[cur].ms+20000)refresh(cur)});
 </script>
+<script src="tgload.js?v=2"></script>
 <script>
-// ===== ⚡ Φόρτωμα αγοράς · ζωντανό ανά 5′ (πρόσθετο στρώμα · δεν αγγίζει το παγωμένο μοντέλο) =====
+// ===== ⚡ Φόρτωμα αγοράς v2 · ζωντανό ανά 5′ · ξαναπαίζει τις τελευταίες 8ω σε κάθε ανανέωση =====
 (function(){
-const EXCL=new Set(["XAUUSDT"]);               // εκτός καλαθιού (μετρήθηκε μόνο με crypto)
-const TH={br:.80,moi:.003,tk:1.10,ext:1.5,moiS:-.005,watch_br:.6,watch_moi:.0015};
-// ιστορικό 2021-12 → 2026-10, 22 crypto: «ήρθε η κίνηση» = +0,5% προς την κατεύθυνση πριν −0,5% αντίθετα, εντός 4ω · [με φόρτωμα, τυχαία ίδια ώρα]
+const NB=100, SPARK=36;
+const KEY="tg.load.log2";let LOG=[];try{LOG=JSON.parse(ls.get(KEY)||"[]")}catch(e){LOG=[]}
+let TIMER=null,BUSY=false,LASTOUT=null;
+const el=id=>document.getElementById(id);const fin=Number.isFinite;
+const tA=t=>new Date(t).toLocaleTimeString("el-GR",{hour:"2-digit",minute:"2-digit",hour12:false,timeZone:"Europe/Athens"});
+const pc=(x,d)=>!fin(x)?"—":(x>0?"+":"")+(x*100).toFixed(d===undefined?2:d)+"%";
+const px=v=>!fin(v)?"—":v>=1000?v.toLocaleString("el-GR",{maximumFractionDigits:0}):v>=1?v.toFixed(v>=100?2:3):v.toPrecision(4);
 const HIST={long:{0:[47,38],1:[44,35],2:[42,37],3:[44,39],4:[48,45],5:[48,41]},short:{0:[51,39],1:[51,39],2:[50,34],3:[51,39],4:[55,45],5:[49,40]}};
 const SESS=[[22,24,"2 ώρες πριν την Ασία"],[0,2,"άνοιγμα Ασίας"],[2,7,"Ασία"],[7,12,"Λονδίνο"],[12,16,"Αμερική"],[16,22,"βράδυ ΗΠΑ"]];
-const KEY="tg.load.log";let LOG=[];try{LOG=JSON.parse(ls.get(KEY)||"[]")}catch(e){LOG=[]}
-let LAST=null,TIMER=null,BUSY=false;
-const el=id=>document.getElementById(id);
-const tA=(t,o)=>new Date(t).toLocaleTimeString("el-GR",Object.assign({hour:"2-digit",minute:"2-digit",hour12:false,timeZone:"Europe/Athens"},o||{}));
-const pc=(x,d)=>!isFinite(x)?"—":(x>0?"+":"")+(x*100).toFixed(d===undefined?2:d)+"%";
-function sessIdx(t){const h=new Date(t).getUTCHours();return SESS.findIndex(([a,b])=>h>=a&&h<b)}
-function nextOpen(now){ // επόμενο άνοιγμα: Τόκιο 00:00 UTC, Λονδίνο 08:00 UTC, Ν.Υόρκη 09:30 τοπική
-  const c=[];const d=new Date(now);
-  for(const [h,m,n] of [[0,0,"Τόκιο"],[8,0,"Λονδίνο"]]){const x=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),h,m);c.push([x>now?x:x+864e5,n])}
+const sessIdx=t=>{const h=new Date(t).getUTCHours();return SESS.findIndex(([a,b])=>h>=a&&h<b)};
+function nextOpen(now){const d=new Date(now);const c=[];
+  for(const [h,n] of [[0,"Τόκιο"],[8,"Λονδίνο"]]){const x=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),h);c.push([x>now?x:x+864e5,n])}
   for(let k=0;k<2;k++){const dd=new Date(now+k*864e5);const p=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hour12:false,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).formatToParts(dd).reduce((a,x)=>(a[x.type]=x.value,a),{});
-    const ny=Date.UTC(+p.year,+p.month-1,+p.day,9,30);const off=(Date.UTC(+p.year,+p.month-1,+p.day,+p.hour%24,+p.minute)-Math.floor((now+k*864e5)/6e4)*6e4);const x=ny-off;if(x>now){c.push([x,"Νέα Υόρκη"]);break}}
+    const nyMid=Date.UTC(+p.year,+p.month-1,+p.day,0,0);const localNow=Date.UTC(+p.year,+p.month-1,+p.day,+p.hour%24,+p.minute);const off=localNow-Math.floor((now+k*864e5)/6e4)*6e4;const x=nyMid+9.5*36e5-off;if(x>now){c.push([x,"Νέα Υόρκη"]);break}}
   c.sort((a,b)=>a[0]-b[0]);return c[0]}
 async function fetchAll(){
-  const out={};
-  await pool(SYMS,6,async s=>{
-    const [k5,k4,oi]=await Promise.all([j(`${API}/fapi/v1/klines?symbol=${s}&interval=5m&limit=60`),j(`${API}/fapi/v1/klines?symbol=${s}&interval=4h&limit=30`),j(`${API}/futures/data/openInterestHist?symbol=${s}&period=5m&limit=60`)]);
-    const now=Date.now();const b=k5.filter(k=>+k[6]<now);const c4=k4.filter(k=>+k[6]<now);
-    let tr=[];for(let i=1;i<c4.length;i++){const h=+c4[i][2],l=+c4[i][3],pc_=+c4[i-1][4];tr.push(Math.max(h-l,Math.abs(h-pc_),Math.abs(l-pc_)))}
-    const atr=tr.slice(-14).reduce((a,x)=>a+x,0)/Math.min(14,tr.length);
-    const om=new Map(oi.map(x=>[+x.timestamp,+x.sumOpenInterestValue]));
-    out[s]={b,atr,om,hi4:Math.max(...b.slice(-48).map(k=>+k[2])),lo4:Math.min(...b.slice(-48).map(k=>+k[3]))}});
+  const D={};const now=Date.now();
+  await pool(SYMS,5,async s=>{const q=`symbol=${s}&period=5m&limit=${NB}`;
+    const [k5,k4,oi,tp,gl]=await Promise.all([j(`${API}/fapi/v1/klines?symbol=${s}&interval=5m&limit=${NB}`),j(`${API}/fapi/v1/klines?symbol=${s}&interval=4h&limit=30`),j(`${API}/futures/data/openInterestHist?${q}`),j(`${API}/futures/data/topLongShortPositionRatio?${q}`).catch(()=>[]),j(`${API}/futures/data/globalLongShortAccountRatio?${q}`).catch(()=>[])]);
+    const c4=k4.filter(x=>+x[6]<now);let tr=[];for(let i=1;i<c4.length;i++){const h=+c4[i][2],l=+c4[i][3],p=+c4[i-1][4];tr.push(Math.max(h-l,Math.abs(h-p),Math.abs(l-p)))}
+    D[s]={k:new Map(k5.filter(x=>+x[6]<now).map(x=>[+x[0],x])),oi:new Map(oi.map(x=>[+x.timestamp,+x.sumOpenInterestValue])),tp:new Map(tp.map(x=>[+x.timestamp,+x.longAccount])),gl:new Map(gl.map(x=>[+x.timestamp,+x.longAccount])),atr4:tr.slice(-14).reduce((a,b)=>a+b,0)/Math.max(1,Math.min(14,tr.length))}});
+  const T=[...D.BTCUSDT.k.keys()].sort((a,b)=>a-b);const g=(m,t)=>{const v=m.get(t+3e5)??m.get(t);return v===undefined?NaN:v};
+  const out={};for(const s of SYMS){const d=D[s];if(!d)continue;const K=t=>d.k.get(t);
+    out[s]={t:T,o:T.map(t=>K(t)?+K(t)[1]:NaN),h:T.map(t=>K(t)?+K(t)[2]:NaN),l:T.map(t=>K(t)?+K(t)[3]:NaN),c:T.map(t=>K(t)?+K(t)[4]:NaN),qv:T.map(t=>K(t)?+K(t)[7]:NaN),tbq:T.map(t=>K(t)?+K(t)[10]:NaN),oi:T.map(t=>g(d.oi,t)),top:T.map(t=>g(d.tp,t)),ret:T.map(t=>g(d.gl,t)),atr4:d.atr4}}
   return out}
-function compute(D){
-  const rows=[];let n=0,up=0,dn=0,liq=0,oiN=0,oiT=0,pw=0,qb=0,qs=0,exts=[];
-  for(const s of SYMS){const d=D[s];if(!d||d.b.length<50)continue;const b=d.b,L=b.length-1;
-    const c1=+b[L][4],c0=+b[L-6][4];// OI: το στιγμιότυπο στο κλείσιμο του κεριού (αλλιώς στο άνοιγμα)
-    const o1=d.om.get(+b[L][6]+1)??d.om.get(+b[L][0]),o0=d.om.get(+b[L-6][6]+1)??d.om.get(+b[L-6][0]);
-    let B=0,S=0;for(let k=L-5;k<=L;k++){const q=+b[k][7],tb=+b[k][10];B+=tb;S+=q-tb}
-    const r=c1/c0-1,dO=(o1&&o0)?o1/o0-1:NaN,tk=S>0?B/S:NaN,ext=d.atr>0?(c1/+b[L-48][4]-1)*c1/d.atr:NaN;
-    const row={s,r,dO,tk,ext,c:c1,o1,atHi:c1>=d.hi4*.999,atLo:c1<=d.lo4*1.001,ex:EXCL.has(s)};rows.push(row);
-    if(row.ex||!isFinite(dO))continue;n++;if(r>0&&dO>0)up++;if(r<0&&dO>0)dn++;if(r<0&&dO<0)liq++;oiN+=o1;oiT+=o0;pw+=r*o1;qb+=B;qs+=S;if(isFinite(ext))exts.push(ext)}
-  exts.sort((a,b)=>a-b);const M={n,br_up:up/Math.max(n,1),br_dn:dn/Math.max(n,1),br_liq:liq/Math.max(n,1),moi:oiT?oiN/oiT-1:NaN,mp:oiN?pw/oiN:NaN,tk:qs?qb/qs:NaN,ext:exts.length?exts[exts.length>>1]:NaN};
-  const btc=rows.find(x=>x.s==="BTCUSDT")||{};
-  let st="none",t="ΟΥΔΕΤΕΡΟ",cls="pn",why=[];
-  const enough=n>=15;
-  if(enough&&M.br_up>=TH.br&&M.moi>=TH.moi&&M.tk>=TH.tk&&M.mp>0&&M.ext<=TH.ext){st="long";t="🟡 ΦΟΡΤΩΝΕΙ LONG";cls="pup";why=[`τιμή+OI πάνω σε ${up}/${n}`,`OI ${pc(M.moi)} σε 30′`,`αγοραστές ${M.tk.toFixed(2)}`]}
-  else if(enough&&M.br_liq>=TH.br&&M.moi<=TH.moiS&&M.tk<=1/TH.tk&&M.mp<0&&M.ext>=-TH.ext){st="short";t="🟡 ΦΟΡΤΩΝΕΙ SHORT · ρευστοποίηση longs";cls="pdn";why=[`τιμή κάτω & OI φεύγει σε ${liq}/${n}`,`OI ${pc(M.moi)} σε 30′`,`πωλητές ${(1/M.tk).toFixed(2)}`]}
-  else if(enough&&M.br_dn>=TH.br&&M.moi>=TH.moi&&M.mp<0){st="trap";t="⚡ ΠΑΓΙΔΕΥΜΕΝΟΙ SHORTS · πιθανή άνοδος";cls="pw";why=[`τιμή κάτω αλλά ανοίγουν shorts σε ${dn}/${n}`,`OI ${pc(M.moi)}`,"ιστορικά η πτώση συνεχίστηκε μόνο 6–20% (τυχαία 40–46%)"]}
-  else if(enough&&M.br_up>=TH.watch_br&&M.moi>=TH.watch_moi&&M.mp>0){st="watch_up";t="👀 ΚΙΝΗΣΗ ΠΑΝΩ · παρακολούθηση";cls="pn";why=[`τιμή+OI πάνω σε ${up}/${n}`,`OI ${pc(M.moi)}`,"ένδειξη, όχι μετρημένο σήμα"]}
-  else if(enough&&M.br_liq>=TH.watch_br&&M.moi<=-TH.watch_moi&&M.mp<0){st="watch_dn";t="👀 ΚΙΝΗΣΗ ΚΑΤΩ · παρακολούθηση";cls="pn";why=[`τιμή κάτω & OI φεύγει σε ${liq}/${n}`,`OI ${pc(M.moi)}`,"ένδειξη, όχι μετρημένο σήμα"]}
-  if(!enough){t="— λίγα δεδομένα";why=[`${n} σύμβολα με OI`]}
-  // 🔴 εξασθένηση: η αγορά έχει τρέξει ≥1,5 ATR, το BTC στο άκρο του 4ώρου, OI φεύγει, takers δεν σπρώχνουν
-  let ex=null;if(enough&&isFinite(M.ext)){if(M.ext>=TH.ext&&btc.atHi&&M.moi<0&&M.tk<1.05)ex="🔴 ΕΞΑΣΘΕΝΗΣΗ ΑΝΟΔΟΥ · νέα υψηλά χωρίς νέες θέσεις — όχι είσοδος long τώρα";
-    if(M.ext<=-TH.ext&&btc.atLo&&M.moi<0&&M.tk>1/1.05)ex="🔴 ΕΞΑΣΘΕΝΗΣΗ ΠΤΩΣΗΣ · νέα χαμηλά χωρίς νέες θέσεις — όχι είσοδος short τώρα"}
-  return {M,rows,st,t,cls,why,ex,btc}}
-function render(R,at){
-  const si=sessIdx(at);const h=HIST[R.st==="short"||R.st==="watch_dn"?"short":"long"][si]||[null,null];const nx=nextOpen(at);const mins=Math.round((nx[0]-at)/6e4);
-  el("ldAt").textContent="· "+tA(at)+" · "+SESS[si][2];
-  el("ldV").innerHTML=`<span class="pill ${R.cls}" style="font-size:13px">${R.t}</span> <span class="sm">${R.why.join(" · ")}</span>`+(R.ex?`<div class="note" style="margin:8px 0 0">${R.ex}</div>`:"");
-  el("ldS").innerHTML=`Σε αυτή τη συνεδρία, ιστορικά η κίνηση ήρθε <b>${h[0]}%</b> με φόρτωμα έναντι <b>${h[1]}%</b> χωρίς (${R.st==="short"||R.st==="watch_dn"?"short":"long"}, 2021–26). Επόμενο άνοιγμα: <b>${nx[1]}</b> σε ${mins>=60?Math.floor(mins/60)+"ω "+(mins%60)+"′":mins+"′"}.`;
-  const M=R.M;el("ldK").innerHTML=[["Σύμβολα τιμή+OI πάνω",`${Math.round(M.br_up*M.n)}/${M.n}`],["Τιμή κάτω & OI φεύγει",`${Math.round(M.br_liq*M.n)}/${M.n}`],["OI αγοράς 30′",pc(M.moi)],["Αγοραστές/πωλητές 30′",isFinite(M.tk)?M.tk.toFixed(2):"—"],["Τιμή καλαθιού 30′",pc(M.mp)],["Έχει τρέξει (4ω, ATR)",isFinite(M.ext)?M.ext.toFixed(2):"—"]]
-    .map(([k,v])=>`<div class="k"><div class="t">${k}</div><div class="v" style="font-size:20px">${v}</div></div>`).join("");
-  const dir=R.st==="short"||R.st==="watch_dn"?-1:1;const rows=R.rows.slice().sort((a,b)=>(dir*(b.dO||-9))-(dir*(a.dO||-9)));
-  const ic=x=>x.ex?'<span class="mut">εκτός</span>':x.r>0&&x.dO>0?'<span class="up">↑ φορτώνει</span>':x.r<0&&x.dO<0?'<span class="dn">↓ ρευστοποίηση</span>':x.r<0&&x.dO>0?'<span class="wa">⚡ shorts ανοίγουν</span>':x.r>0&&x.dO<0?'<span class="mut">↑ κάλυψη</span>':'<span class="mut">·</span>';
-  el("ldT").innerHTML=`<table><thead><tr><th>#</th><th>Σύμβολο</th><th>Τιμή 30′</th><th>OI 30′</th><th>Αγορ./πωλ.</th><th>Τρέξει 4ω</th><th>Κατάσταση</th></tr></thead><tbody>`+
-    rows.map((x,i)=>`<tr${i<3&&!x.ex&&((dir>0&&x.dO>0&&x.r>0)||(dir<0&&x.dO<0&&x.r<0))?' style="background:#12203a"':''}><td>${i+1}</td><td><b>${x.s.replace("USDT","")}</b></td><td class="${x.r>0?'up':x.r<0?'dn':''}">${pc(x.r)}</td><td class="${x.dO>0?'up':x.dO<0?'dn':''}">${pc(x.dO)}</td><td>${isFinite(x.tk)?x.tk.toFixed(2):"—"}</td><td>${isFinite(x.ext)?x.ext.toFixed(2):"—"}</td><td style="text-align:left">${ic(x)}</td></tr>`).join("")+"</tbody></table>";
-  // ημερολόγιο
-  const btcPx=R.btc.c;if(btcPx&&R.st!=="none"&&!R.st.startsWith("watch")&&(!LOG.length||LOG[0].st!==R.st||at-LOG[0].ts>4*36e5)){LOG.unshift({ts:at,st:R.st,t:R.t,px:btcPx});LOG=LOG.slice(0,200)}
-  if(btcPx)for(const e of LOG){if(e.p1==null&&at-e.ts>=36e5&&at-e.ts<36e5+6e5)e.p1=btcPx/e.px-1;if(e.p4==null&&at-e.ts>=144e5&&at-e.ts<144e5+6e5)e.p4=btcPx/e.px-1}
+function spark(a,w,h,col){const v=a.filter(fin);if(v.length<2)return"";let mn=Math.min(...v),mx=Math.max(...v);if(mx===mn)mx=mn+1e-9;const n=a.length;
+  const pts=a.map((y,i)=>fin(y)?`${(i/(n-1)*w).toFixed(1)},${(h-(y-mn)/(mx-mn)*(h-2)-1).toFixed(1)}`:null).filter(Boolean).join(" ");
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.4"/></svg>`}
+const STW={load:['↑ φορτώνει','up'],absorb:['⏸ απορρόφηση','wa'],liq:['↓ ρευστοποίηση','dn'],shorts:['⚡ shorts ανοίγουν','wa'],cover:['↑ κάλυψη','mut'],none:['·','mut']};
+function render(D,out,at){
+  const N=out.N,j=N-1,T=D.BTCUSDT.t,S=out.SS[j],m=out.M[j];const ev=out.ev.filter(e=>e.type!=="open");const open=out.ev.filter(e=>e.type==="open");
+  // --- κατάσταση τώρα ---
+  let head=[];for(const o of open){const ep=o.ep;const d=ep.dir>0?"LONG":"SHORT";const since=tA(T[ep.start]+3e5);
+    if(ep.phase==="move"){const g=ep.dir*(D.BTCUSDT.c[j]/ep.epx-1);head.push(`<span class="pill ${ep.dir>0?'pup':'pdn'}" style="font-size:13px">🎯 ΣΕ ΚΙΝΗΣΗ ${d}</span> είσοδος ${tA(T[ep.entry]+3e5)} στο BTC ${px(ep.epx)} · τώρα ${pc(g)} · κορυφή ${pc(ep.dir*(ep.ext/ep.epx-1))} · άκρη ${px(ep.edge)}${ep.exh?' · <b class="dn">🔴 εξασθένηση '+tA(T[ep.exh]+3e5)+'</b>':''}`)}
+    else head.push(`<span class="pill ${ep.k==='liq'?'pdn':ep.k==='absorb'?'pn':'pw'}" style="font-size:13px">🟡 ΠΑΡΑΚΟΛΟΥΘΗΣΗ ${d}</span> φόρτωμα από ${since}${ep.re?' (ξανά ×'+ep.re+')':''} · βάση BTC ${px(ep.base)} · περιμένει σκούπισμα & επιστροφή με νέο OI${ep.reentered?' · μετά από stop':''}`)}
+  if(!head.length)head.push(`<span class="pill pn" style="font-size:13px">— ΗΣΥΧΑ</span> <span class="sm">κανένα φόρτωμα σε εξέλιξη</span>`);
+  el("ldV").innerHTML=head.join("<br>");
+  // --- συνεδρία ---
+  const si=sessIdx(at);const nx=nextOpen(at);const mins=Math.round((nx[0]-at)/6e4);const hl=HIST.long[si],hs=HIST.short[si];
+  el("ldS").innerHTML=`${SESS[si][2]} · επόμενο άνοιγμα <b>${nx[1]}</b> σε ${mins>=60?Math.floor(mins/60)+"ω "+(mins%60)+"′":mins+"′"} · ιστορικά εδώ η κίνηση ήρθε: long ${hl[0]}% με φόρτωμα / ${hl[1]}% χωρίς · short ${hs[0]}% / ${hs[1]}%`;
+  // --- ακολουθία ---
+  const last12=ev.filter(e=>at-e.t<=12*36e5);
+  el("ldSeq").innerHTML=last12.length?last12.slice(-14).map(e=>{let x=`<div class="row" style="padding:5px 0"><div><b>${tA(e.t+3e5)}</b> <span class="${e.dir>0?'up':'dn'}">${e.dir>0?'L':'S'}</span> ${e.label}`;
+    if(e.type==="watch")x+=` <span class="mut sm">· ${e.n} σύμβολα · OI ${pc(e.m.moi)} σε 30′ · ${e.dir>0?'αγοραστές':'πωλητές'} ${(e.dir>0?e.m.tk:1/e.m.tk).toFixed(2)}${e.w!=='ισχυρό'?' · '+e.w:''}</span>`;
+    if(e.type==="entry")x+=` <span class="mut sm">· άκρη ${px(e.edge)} · ${e.list.length} σύμβολα</span>`;
+    if(e.type==="exh"||e.type==="end")x+=` <span class="mut sm">· ${pc(e.gain)}${e.peak!==undefined?' · κορυφή '+pc(e.peak):''}</span>`;
+    return x+`</div><div class="mut sm">BTC ${px(e.px)}</div></div>`}).join(""):'<p class="mut sm">Τίποτα τις τελευταίες 12 ώρες.</p>';
+  // --- λίστα εισόδου (αν υπάρχει κίνηση ανοιχτή) ---
+  const mv=open.find(o=>o.ep.phase==="move");const ent=mv?ev.filter(e=>e.type==="entry"&&e.dir===mv.ep.dir).pop():null;
+  el("ldEntry").innerHTML=ent?`<div class="h" style="margin-top:12px">🎯 Σήματα εισόδου ${tA(ent.t+3e5)} · ${ent.list.length} σύμβολα · όλα, με σειρά φορτώματος</div><div class="scroll"><table><thead><tr><th>#</th><th>Σύμβολο</th><th>Αναφορά</th><th>Άκρη (fake)</th><th>OI 30′ τότε</th><th>Τώρα</th></tr></thead><tbody>${ent.list.map((z,i)=>{const d=D[z.s];const now=d?d.c[j]:NaN;const g=ent.dir*(now/z.ref-1);return `<tr><td>${i+1}</td><td><b>${z.s.replace("USDT","")}</b></td><td>${px(z.ref)}</td><td>${px(z.edge)}</td><td class="up">${pc(z.dO)}</td><td class="${g>0?'up':'dn'}">${pc(g)}</td></tr>`}).join("")}</tbody></table></div>`:"";
+  // --- ανά σύμβολο ---
+  const dir=open.length?open[open.length-1].ep.dir:1;
+  const rows=Object.entries(S).filter(([s])=>D[s]).sort((a,b)=>{const A=a[1],B_=b[1];if(A.ex!==B_.ex)return A.ex?1:-1;if(fin(A.dO)!==fin(B_.dO))return fin(A.dO)?-1:1;return dir*((B_.dO||0)-(A.dO||0))});
+  el("ldT").innerHTML=`<table><thead><tr><th>Σύμβολο</th><th style="text-align:left">Τιμή 3ω</th><th style="text-align:left">OI 3ω</th><th>Τιμή 30′</th><th>OI 30′</th><th>Αγ./πωλ.</th><th>Μεγάλοι/λιαν.</th><th style="text-align:left">Κατάσταση</th></tr></thead><tbody>`+
+    rows.map(([s,x])=>{const d=D[s];const cs=d.c.slice(-SPARK),os=d.oi.slice(-SPARK);const [w,cl]=x.ex?['εκτός καλαθιού','mut']:STW[x.st];
+      const tr=fin(x.top)&&fin(x.ret)?`<span class="${x.top>0?'up':x.top<0?'dn':'mut'}">${x.top>0?'▲':x.top<0?'▼':'·'}</span>/<span class="${x.ret>0?'up':x.ret<0?'dn':'mut'}">${x.ret>0?'▲':x.ret<0?'▼':'·'}</span>`:'—';
+      return `<tr><td><b>${s.replace("USDT","")}</b></td><td style="text-align:left">${spark(cs,96,22,x.r30>0?'#22c55e':'#ef4444')}</td><td style="text-align:left">${spark(os,96,22,fin(x.dO)&&x.dO>0?'#3b82f6':'#8592a6')}</td><td class="${x.r30>0?'up':x.r30<0?'dn':''}">${pc(x.r30)}</td><td class="${x.dO>0?'up':x.dO<0?'dn':''}">${pc(x.dO)}</td><td>${fin(x.tk)?x.tk.toFixed(2):'—'}</td><td>${tr}</td><td style="text-align:left" class="${cl}">${w}</td></tr>`}).join("")+"</tbody></table>";
+  const cnt={};for(const [s,x] of rows)if(!x.ex)cnt[x.st]=(cnt[x.st]||0)+1;
+  el("ldK").innerHTML=`<span class="up">↑ φορτώνουν ${cnt.load||0}</span> · <span class="wa">⏸ απορρόφηση ${cnt.absorb||0}</span> · <span class="dn">↓ ρευστοποίηση ${cnt.liq||0}</span> · <span class="wa">⚡ shorts ανοίγουν ${cnt.shorts||0}</span> · <span class="mut">↑ κάλυψη ${cnt.cover||0}</span> · OI αγοράς 30′ <b>${pc(m.moi)}</b> · αγοραστές/πωλητές 30′ <b>${fin(m.tk)?m.tk.toFixed(2):'—'}</b> · έχει τρέξει 4ω <b>${fin(m.ext)?m.ext.toFixed(2):'—'} ATR</b>`;
+  // --- ημερολόγιο ---
+  const btc=D.BTCUSDT.c[j];for(const e of ev){if(e.type==="watch"&&e.w==="ασθενές")continue;const key=e.type+e.dir+e.t;if(!LOG.find(x=>x.key===key))LOG.unshift({key,ts:e.t+3e5,dir:e.dir,type:e.type,t:e.label,px:e.px})}
+  LOG.sort((a,b)=>b.ts-a.ts);LOG=LOG.slice(0,300);
+  for(const e of LOG){if(e.p1==null&&at-e.ts>=36e5&&at-e.ts<36e5+6e5)e.p1=btc/e.px-1;if(e.p4==null&&at-e.ts>=144e5&&at-e.ts<144e5+6e5)e.p4=btc/e.px-1}
   ls.set(KEY,JSON.stringify(LOG));
-  el("ldL").innerHTML=LOG.length?`<table><thead><tr><th>Πότε</th><th>Τι είπε</th><th>BTC</th><th>+1ω</th><th>+4ω</th></tr></thead><tbody>`+LOG.slice(0,12).map(e=>{const d=e.st==="short"?-1:1;const f=v=>v==null?"<span class='mut'>…</span>":`<span class="${d*v>0?'up':'dn'}">${pc(v)}</span>`;return `<tr><td>${new Date(e.ts).toLocaleString("el-GR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Athens"})}</td><td style="text-align:left">${e.t}</td><td>${fmt(e.px)}</td><td>${f(e.p1)}</td><td>${f(e.p4)}</td></tr>`}).join("")+"</tbody></table>":'<p class="mut sm">Καμία καταγραφή ακόμα. Καταγράφονται τα 🟡/⚡ και το αποτέλεσμα του BTC μετά από 1ω και 4ω.</p>'}
-async function run(){if(BUSY)return;BUSY=true;try{const D=await fetchAll();const R=compute(D);LAST=R;render(R,Date.now());el("ldErr").textContent=""}catch(e){el("ldErr").textContent="Πρόβλημα φόρτωσης (Binance). Ξαναπροσπαθώ στο επόμενο 5λεπτο."}finally{BUSY=false}
+  el("ldL").innerHTML=LOG.length?`<table><thead><tr><th>Πότε</th><th style="text-align:left">Τι είπε</th><th>BTC</th><th>+1ω</th><th>+4ω</th></tr></thead><tbody>`+LOG.slice(0,20).map(e=>{const f=v=>v==null?"<span class='mut'>…</span>":`<span class="${e.dir*v>0?'up':'dn'}">${pc(v)}</span>`;return `<tr><td>${new Date(e.ts).toLocaleString("el-GR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Athens"})}</td><td style="text-align:left">${e.t}</td><td>${px(e.px)}</td><td>${f(e.p1)}</td><td>${f(e.p4)}</td></tr>`}).join("")+"</tbody></table>":'<p class="mut sm">Καμία καταγραφή ακόμα.</p>';
+  el("ldAt").textContent="· "+tA(T[j]+3e5);}
+async function run(){if(BUSY)return;BUSY=true;try{const D=await fetchAll();const out=TGLOAD.run(D,SYMS);LASTOUT={D,out};window.TGLOAD_LAST=LASTOUT;render(D,out,Date.now());el("ldErr").textContent=""}catch(e){el("ldErr").textContent="Πρόβλημα φόρτωσης (Binance). Ξαναπροσπαθώ στο επόμενο 5λεπτο."}finally{BUSY=false}
   const now=Date.now();const next=Math.ceil(now/3e5)*3e5+25e3;clearTimeout(TIMER);TIMER=setTimeout(run,next-now)}
-function boot(){const app=document.getElementById("app");if(!app||app.style.display==="none"){setTimeout(boot,1000);return}run()}
+function boot(){const app=document.getElementById("app");if(!app||app.style.display==="none"||!window.TGLOAD){setTimeout(boot,1000);return}run()}
 boot();
 })();
 </script></body></html>
