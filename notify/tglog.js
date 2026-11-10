@@ -22,7 +22,9 @@ module.exports=async function tglog(c){const {D,out,st,now,pNow,sweeps,API,j}=c;
   const call=async b=>{if(!URL||!TOK){if(DRY)console.log("LOG(dry)",b.op||b.sheet,(b.rows||[]).length,JSON.stringify((b.rows||[])[0]||{}).slice(0,600));return {ok:true,dry:true}}
     const res=await fetch(URL,{method:"POST",headers:{"content-type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({token:TOK},b)),redirect:"follow"});const t=await res.text();try{return JSON.parse(t)}catch(e){throw new Error("apps script: "+t.slice(0,120))}};
   const stats={ev:0,out:0,snap:0,sum:0,err:[]};const safe=async(name,f)=>{try{await f()}catch(e){stats.err.push(name+": "+e.message)}};
-  st.seen=st.seen||{};st.sentP=st.sentP||{};st.logged=st.logged||{};if(!st.logStart)st.logStart=now;
+  st.seen=st.seen||{};st.sentP=st.sentP||{};st.logged=st.logged||{};
+  if((!URL||!TOK)&&!DRY){for(const e of out.ev){if(e.type==="open")continue;const k=e.type+"|"+e.dir+"|"+e.t;if(!st.seen[k])st.seen[k]={d:now,p:pNow}}return {disabled:"χωρίς TG_LOG_URL/TG_LOG_TOKEN"}}
+  if(!st.logStart)st.logStart=now;
   const {res:EP,cur}=episodes(out,st);
   // 1. συμβάντα
   await safe("συμβάντα",async()=>{const rows=[];
