@@ -57,14 +57,18 @@ if(process.env.LIB==="1"){module.exports={fetchAll,sweepEvents,sweepMsg,SYMS,TGL
   if(!HOOK&&!DRY){console.log("no webhook");process.exit(0)}
   let st={sent:{}};try{st=JSON.parse(fs.readFileSync(STATE,"utf8"))}catch(e){}
   const D=await fetchAll();const out=TGLOAD.run(D,SYMS);const now=Date.now();
+  let pNow=NaN;try{pNow=+(await j(`${API}/fapi/v1/ticker/price?symbol=BTCUSDT`)).price}catch(e){pNow=D.BTCUSDT.c[out.N-1]}
+  st.sentP=st.sentP||{};const sweeps=[];
   const first=!Object.keys(st.sent).length;
   const ev=out.ev.filter(e=>e.type!=="open"&&!(e.type==="watch"&&e.w==="ασθενές")&&now-(e.t+3e5)<=(+process.env.WINDOW_MIN||(first?30:90))*6e4);
-  let n=0;for(const e of ev){const key=e.type+"|"+e.dir+"|"+e.t;if(st.sent[key])continue;const m=msg(e,D,now);if(!m)continue;await post(m);st.sent[key]=now;n++}
+  let n=0;for(const e of ev){const key=e.type+"|"+e.dir+"|"+e.t;if(st.sent[key])continue;const m=msg(e,D,now);if(!m)continue;await post(m);st.sent[key]=Date.now();st.sentP[key]=pNow;n++}
   // ⚡ σκούπισμα: μόνο φρέσκο (≤10′), με ανάπαυλα 3 κεριών ανά πλευρά εκτός αν σκουπίστηκε μεγαλύτερο άκρο
   st.sw=st.sw||{};if(process.env.NO_SWEEP!=="1")for(const jj of [out.N-2,out.N-1]){if(jj<SW.Ws[2][0]+SW.K+1)continue;for(const e of sweepEvents(D,jj)){const key="sweep|"+e.dir+"|"+e.t;if(st.sent[key])continue;if(now-(e.t+3e5)>(+process.env.SWEEP_FRESH||SW.fresh)*6e4)continue;
-      const pv=st.sw[e.dir];if(pv&&e.t>pv.t&&e.t-pv.t<=SW.cool*3e5&&e.W<=pv.W)continue;await post(sweepMsg(e,D,out,now));st.sent[key]=now;st.sw[e.dir]={t:e.t,W:e.W};n++}}
+      const pv=st.sw[e.dir];if(pv&&e.t>pv.t&&e.t-pv.t<=SW.cool*3e5&&e.W<=pv.W)continue;await post(sweepMsg(e,D,out,now));const ts=Date.now();st.sent[key]=ts;st.sw[e.dir]={t:e.t,W:e.W};n++;
+      sweeps.push({key,t:e.t,dir:e.dir,sent:ts,p:pNow,px:D.BTCUSDT.c[e.j],edge:e.b?e.b.edge:NaN,list:e.list,lab:e.b?`σκούπισμα ${e.dir>0?"κάτω":"πάνω"} & επιστροφή · ${e.b.lab}`:`σκούπισμα αγοράς ${e.dir>0?"κάτω":"πάνω"} · ${e.list.length} σύμβολα`})}}
   if(process.env.TEST_MSG==="1")await post("✅ Δοκιμή: οι ειδοποιήσεις «Φόρτωμα αγοράς» συνδέθηκαν. Τελευταίο κερί "+tA(D.BTCUSDT.t[out.N-1]+3e5)+" · BTC "+px(D.BTCUSDT.c[out.N-1]));
+  let lg="";if(process.env.NO_LOG!=="1"){try{const r=await require(path.join(__dirname,"tglog.js"))({D,out,st,now,pNow,sweeps,API,j,EXCL:TGLOAD.EXCL});lg=JSON.stringify(r)}catch(e){lg="log error "+e.message}}
   for(const k in st.sent)if(now-st.sent[k]>3*864e5)delete st.sent[k];
   fs.mkdirSync(path.dirname(STATE),{recursive:true});fs.writeFileSync(STATE,JSON.stringify(st));
-  console.log("bars",out.N,"events",out.ev.length,"sent",n);
+  console.log("bars",out.N,"events",out.ev.length,"sent",n,"log",lg);
 })().catch(e=>{console.error("ERR",e.message);process.exit(1)});
