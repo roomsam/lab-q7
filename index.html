@@ -15,7 +15,7 @@ header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14p
 .grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px}@media(max-width:900px){.grid{grid-template-columns:1fr}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
 .h{font-size:11px;letter-spacing:1.4px;color:var(--mut);font-weight:700;text-transform:uppercase;margin:0 0 10px}
-.cards4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}@media(max-width:640px){.cards4{grid-template-columns:repeat(2,minmax(0,1fr))}#ldK{grid-template-columns:repeat(2,minmax(0,1fr))!important}}@media(min-width:641px) and (max-width:1000px){#ldK{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+.cards4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}@media(max-width:640px){.cards4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .k{background:#0b111c;border:1px solid var(--line);border-radius:12px;padding:12px}.k .t{font-size:12px;color:var(--mut)}.k .v{font-size:26px;font-weight:800;margin:4px 0}
 .k{min-width:0;overflow-wrap:anywhere}.k.sig{border-color:#1f6b3d}.k.sigd{border-color:#7a2626}
 .pb{height:8px;border-radius:4px;background:var(--dn);overflow:hidden;margin:6px 0}.pb i{display:block;height:100%;background:var(--up)}
@@ -29,6 +29,46 @@ tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#142
 #gate{max-width:420px;margin:12vh auto}input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0b111c;color:var(--tx);font-size:16px}
 .go{margin-top:10px;width:100%;padding:12px;border-radius:10px;border:0;background:var(--acc);color:#fff;font-weight:700;font-size:16px}
 .note{border:1px solid #6b5410;background:#1e1808;color:#f1d48a;border-radius:10px;padding:9px 12px;font-size:12.5px;margin-bottom:10px}
+
+/* ⚡ Φόρτωμα αγοράς v3 */
+#ldCard{position:relative;padding:16px;border:1px solid #22304a;border-radius:18px;overflow:hidden;background:radial-gradient(900px 260px at 0% -10%,rgba(59,130,246,.17),transparent 60%),radial-gradient(700px 240px at 100% 0%,rgba(245,179,1,.10),transparent 60%),linear-gradient(180deg,#0e1524,#0a0f1a);box-shadow:0 0 0 1px rgba(59,130,246,.08),0 18px 50px rgba(0,0,0,.45)}
+#ldCard:before{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(133,146,166,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(133,146,166,.055) 1px,transparent 1px);background-size:28px 28px;-webkit-mask-image:linear-gradient(180deg,#000,transparent 420px);mask-image:linear-gradient(180deg,#000,transparent 420px)}
+#ldCard>*{position:relative}
+#ldCard .mono,#ldCard .ldF .v,#ldCard .ldTb td,#ldCard .ldEv .tm,#ldCard .ldEv .px{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.ldTop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ldTitle{font-size:17px;font-weight:850;letter-spacing:.2px}.ldTitle b{color:var(--acc)}
+.ldLive{display:inline-flex;align-items:center;gap:6px;font:700 11px ui-monospace,Menlo,monospace;color:var(--up);border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.08);padding:3px 9px;border-radius:99px}
+.ldLive i{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 8px var(--up);animation:ldP 1.6s infinite}@keyframes ldP{50%{opacity:.3}}
+.ldVer{margin-left:auto;font:600 10px ui-monospace,monospace;color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
+.ldSec{font:700 11px ui-monospace,Menlo,monospace;letter-spacing:1.5px;color:#9fb0c9;text-transform:uppercase;margin:18px 0 9px;display:flex;align-items:center;gap:10px}
+.ldSec:before{content:"";width:6px;height:6px;background:var(--acc);box-shadow:0 0 8px var(--acc);border-radius:1px;transform:rotate(45deg)}.ldSec:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#263451,transparent)}
+.ldHero{border:1px solid #263451;border-radius:16px;padding:14px;background:rgba(9,14,24,.78);backdrop-filter:blur(4px)}
+.ldHero.L{border-color:rgba(34,197,94,.55);box-shadow:inset 0 0 46px rgba(34,197,94,.09),0 0 22px rgba(34,197,94,.10)}
+.ldHero.S{border-color:rgba(239,68,68,.55);box-shadow:inset 0 0 46px rgba(239,68,68,.09),0 0 22px rgba(239,68,68,.10)}
+.ldHero.W{border-color:rgba(245,179,1,.5);box-shadow:inset 0 0 46px rgba(245,179,1,.07),0 0 22px rgba(245,179,1,.07)}
+.ldState{font-size:22px;font-weight:900;letter-spacing:.4px;line-height:1.2}.ldHero .sub{color:var(--mut);font-size:12.5px;margin-top:3px}
+.ldFacts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.ldF{border:1px solid var(--line);border-radius:12px;padding:9px 11px;background:linear-gradient(180deg,#0d1422,#0a101b);min-width:0}
+.ldF .t{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ldF .v{font-size:19px;font-weight:800;margin-top:3px;white-space:nowrap}.ldF.z .v{color:#55627a!important}.ldF.z{opacity:.8}
+.ldEarly{margin-top:10px;font-size:12px;color:var(--mut);border-left:2px solid #3a4763;padding:3px 0 3px 10px}
+.ldKp{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px;margin-top:10px}.ldKp .ldF .v{font-size:22px}
+.ldSess{display:grid;grid-template-columns:1fr 1fr 2.2fr;gap:8px;margin-top:8px}.ldSess>div{border:1px solid var(--line);border-radius:12px;padding:9px 11px;background:rgba(11,17,28,.6);font-size:13px}
+.ldSess .t{display:block;font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.9px;margin-bottom:2px}
+.ldSeqBox{max-height:430px;overflow-y:auto;padding-right:2px}
+.ldEv{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-left:3px solid #3a4763;border-radius:12px;padding:9px 11px;background:rgba(11,17,28,.62);margin-bottom:7px}
+.ldEv.L{border-left-color:var(--up)}.ldEv.S{border-left-color:var(--dn)}.ldEv.x{opacity:.55}.ldEv.hot{background:rgba(59,130,246,.10);border-color:#2b4a86}
+.ldEv .tm{font-weight:800;font-size:14px;min-width:50px;line-height:1.15}.ldEv .tm span{display:block;font-size:10px;letter-spacing:.8px;margin-top:3px}
+.ldEv .bd{flex:1;min-width:0}.ldEv .lb{font-weight:750;font-size:13.5px}.ldEv .px{font-size:11px;color:var(--mut);text-align:right;white-space:nowrap}.ldEv .px b{color:var(--tx);font-size:13px}
+table.ldTb{border-collapse:separate;border-spacing:0}table.ldTb th{position:sticky;top:0;z-index:2;background:#0c1320;font:700 10.5px ui-monospace,Menlo,monospace;letter-spacing:.8px;text-transform:uppercase;color:#9fb0c9;padding:9px 7px;border-bottom:1px solid #263451}
+table.ldTb td{padding:8px 7px;border-bottom:1px solid #162033;font-size:13px}table.ldTb tbody tr:hover td{background:#101a2b}
+table.ldTb td:first-child,table.ldTb th:first-child{position:sticky;left:0;z-index:1;background:#0c1320;font-family:inherit!important;font-size:14px}table.ldTb th:first-child{z-index:3;font:700 10.5px ui-monospace,Menlo,monospace!important}
+table.ldTb tr.st-load td:first-child{box-shadow:inset 3px 0 0 var(--up)}table.ldTb tr.st-liq td:first-child{box-shadow:inset 3px 0 0 var(--dn)}table.ldTb tr.st-shorts td:first-child,table.ldTb tr.st-absorb td:first-child,table.ldTb tr.st-transfer td:first-child,table.ldTb tr.st-absorbliq td:first-child,table.ldTb tr.st-absorbliqS td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
+table.ldTb tr.ldSep td{position:static;background:#0a0f1a;color:#9fb0c9;font:700 10.5px ui-monospace,Menlo,monospace!important;letter-spacing:1.4px;text-transform:uppercase;text-align:left;padding:12px 7px 7px;border-bottom:1px solid #263451}
+.ldChip{display:inline-block;padding:2px 9px;border-radius:99px;font:700 11.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;border:1px solid;white-space:nowrap}
+.c-up{color:var(--up);border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.10)}.c-dn{color:var(--dn);border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.10)}.c-wa{color:var(--warn);border-color:rgba(245,179,1,.4);background:rgba(245,179,1,.08)}.c-mut{color:var(--mut);border-color:var(--line);background:#101827}
+@media(max-width:1000px){.ldKp{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:640px){#ldCard{padding:12px}.ldFacts{grid-template-columns:repeat(2,minmax(0,1fr))}.ldKp{grid-template-columns:repeat(2,minmax(0,1fr))}.ldSess{grid-template-columns:1fr 1fr}.ldSess .hist{grid-column:1/-1}.ldState{font-size:19px}.ldF .v{font-size:17px}.ldKp .ldF .v{font-size:20px}}
 </style></head><body><div class="wrap">
 <div id="gate" class="card"><div class="logo">Trading<b>Gym</b> · Πρόβλεψη</div><p class="mut">Γράψε τον κωδικό για να ξεκλειδώσει το μοντέλο σε αυτή τη συσκευή.</p>
 <input id="pw" type="password" autocomplete="current-password" placeholder="Κωδικός"><button class="go" id="unlock">Άνοιγμα</button><p id="gmsg" class="sm mut"></p></div>
@@ -36,14 +76,14 @@ tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#142
 <header><div class="logo">Trading<b>Gym</b> · Πρόβλεψη</div><select id="sym" class="btn"></select><div id="tabs" style="display:flex;gap:6px"></div><div class="btn" id="cd">⏱ —</div><div class="badge" id="badge">ΠΕΙΡΑΜΑΤΙΚΟ · σε σκιώδη έλεγχο</div></header>
 <div class="sm mut" id="status" style="margin:-6px 0 12px">—</div>
 <div id="notes"></div>
-<div class="card" id="ldCard"><div class="h">⚡ Φόρτωμα αγοράς · ζωντανό ανά 5′ <span id="ldAt" style="text-transform:none;letter-spacing:0"></span> <span style="font:600 10px monospace;border:1px solid var(--line);border-radius:4px;padding:1px 5px;letter-spacing:0">ΔΟΚΙΜΑΣΤΙΚΟ v2.6 · 10/11</span></div>
+<div class="card" id="ldCard"><div class="ldTop"><div class="ldTitle">⚡ Φόρτωμα <b>αγοράς</b></div><span class="ldLive"><i></i>ΖΩΝΤΑΝΟ 5′ <span id="ldAt"></span></span><span class="ldVer">v3.0 · 10/11</span></div>
 <div id="ldV" class="sm">Φόρτωση…</div>
-<div id="ldS" class="sm mut" style="margin:8px 0 10px"></div>
-<div class="h" style="margin-top:4px">Ακολουθία · τελευταίες 12 ώρες</div><div id="ldSeq"></div>
+<div id="ldK"></div>
+<div id="ldS"></div>
 <div id="ldEntry"></div>
-<div class="h" style="margin-top:12px">Κάθε σύμβολο · ποιο φορτώνει (τιμή & OI, 3 ώρες · ταξινόμηση κατά χτίσιμο OI)</div>
-<div id="ldK" class="sm mut" style="margin-bottom:6px"></div>
-<div class="scroll" id="ldT" style="max-height:560px;overflow-y:auto"></div>
+<div class="ldSec">Ακολουθία · 12 ώρες · το πιο πρόσφατο πάνω</div><div id="ldSeq" class="ldSeqBox"></div>
+<div class="ldSec">Κάθε σύμβολο · τιμή & OI 3 ωρών · κατά χτίσιμο OI</div>
+<div class="scroll" id="ldT" style="max-height:640px;overflow-y:auto"></div>
 <details style="margin-top:8px"><summary class="sm" style="cursor:pointer;color:var(--mut)">Ημερολόγιο (σε αυτή τη συσκευή) · τι είπε και τι έκανε το BTC μετά</summary><div id="ldL" style="margin-top:8px"></div></details>
 <p class="sm mut" style="margin:8px 0 0">⏸ απορρόφηση: πωλητές/ρευστοποιήσεις που δεν ρίχνουν την τιμή ενώ το OI κρατάει, ή μεγάλοι ▲ με λιανική ▼ σε σταθερό OI (μεταφορά θέσεων). Ρευστοποιήσεις = δείγμα Binance, μόνο όσο η σελίδα είναι ανοιχτή. 🟡 φόρτωμα → παρακολούθηση · 🎯 είσοδος μετά από σκούπισμα της άκρης και επιστροφή με νέο OI (η άκρη του fake = αναφορά stop) · 🔴 εξασθένηση: νέα άκρα ενώ το OI φεύγει · ❌ τέλος: χάθηκε το ενδιαφέρον ή ρευστοποίηση στην άλλη πλευρά. Ξεχωριστό στρώμα από το μοντέλο 4H, δεν το αλλάζει. Μετρημένο 2021–26 σε 22 crypto· η απορρόφηση σημειώνεται ως ασθενέστερη. <span id="ldErr" class="wa"></span></p></div>
 <div class="grid"><div>
@@ -405,33 +445,44 @@ const usd=v=>!fin(v)||v<=0?'—':v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?Math.round
 function render(D,out,at){
   const N=out.N,j=N-1,T=D.BTCUSDT.t,S=out.SS[j],m=out.M[j];const ev=out.ev.filter(e=>e.type!=="open");const open=out.ev.filter(e=>e.type==="open");
   // --- κατάσταση τώρα ---
-  let head=[];for(const o of open){const ep=o.ep;const d=ep.dir>0?"LONG":"SHORT";const since=tA(T[ep.start]+3e5);
-    if(ep.phase==="move"){const g=ep.dir*(D.BTCUSDT.c[j]/ep.epx-1);head.push(`<span class="pill ${ep.dir>0?'pup':'pdn'}" style="font-size:13px">🎯 ΣΕ ΚΙΝΗΣΗ ${d}</span> είσοδος ${tA(T[ep.entry]+3e5)} στο BTC ${px(ep.epx)} · τώρα ${pc(g)} · κορυφή ${pc(ep.dir*(ep.ext/ep.epx-1))} · άκρη ${px(ep.edge)}${ep.exh?' · <b class="dn">🔴 εξασθένηση '+tA(T[ep.exh]+3e5)+'</b>':''}`)}
-    else head.push(`<span class="pill ${ep.k==='liq'?'pdn':ep.k==='absorb'?'pn':'pw'}" style="font-size:13px">🟡 ΠΑΡΑΚΟΛΟΥΘΗΣΗ ${d}</span> φόρτωμα από ${since}${ep.re?' (ξανά ×'+ep.re+')':''} · βάση BTC ${px(ep.base)} · περιμένει σκούπισμα & επιστροφή με νέο OI${ep.reentered?' · μετά από stop':''}`)}
-  if(!head.length)head.push(`<span class="pill pn" style="font-size:13px">— ΗΣΥΧΑ</span> <span class="sm">κανένα φόρτωμα σε εξέλιξη</span>`);
-  el("ldV").innerHTML=head.join("<br>");
+  const btcNow=D.BTCUSDT.c[j];const isEarly=o=>o.ep.phase!=="move"&&(o.ep.k==="xfer"||o.ep.k==="dist");
+  const reg=open.filter(o=>!isEarly(o)).sort((a,b)=>(b.ep.phase==="move")-(a.ep.phase==="move")||b.ep.start-a.ep.start);const earl=open.filter(isEarly);
+  const main=reg[0]||null;const rest=reg.slice(1).concat(main?earl:earl.slice(1));const fact=(t,v,c)=>`<div class="ldF"><div class="t">${t}</div><div class="v ${c||""}">${v}</div></div>`;
+  const dN=o=>o.ep.dir>0?"LONG":"SHORT",dC=o=>o.ep.dir>0?"up":"dn";const earlTxt=o=>o.ep.k==="xfer"?"μεγάλοι παίρνουν από τη λιανική":"μεγάλοι δίνουν στη λιανική";
+  let hero;
+  if(main){const ep=main.ep,L=ep.dir>0;
+    if(ep.phase==="move"){const g=ep.dir*(btcNow/ep.epx-1),pk=ep.dir*(ep.ext/ep.epx-1);
+      hero=`<div class="ldHero ${L?"L":"S"}"><div class="ldState ${dC(main)}">🎯 ΣΕ ΚΙΝΗΣΗ ${dN(main)}</div><div class="sub">είσοδος ${tA(T[ep.entry]+3e5)} · έξοδος στο 🔴 ή στο ❌${ep.exh?` · <b class="dn">🔴 εξασθένηση ${tA(T[ep.exh]+3e5)}</b>`:""}</div><div class="ldFacts">${fact("Είσοδος BTC",px(ep.epx))}${fact("Τώρα",pc(g),g>0?"up":"dn")}${fact("Κορυφή",pc(pk),"up")}${fact("Άκρη · stop",px(ep.edge),"wa")}</div>`}
+    else{const fb=btcNow/ep.base-1;
+      hero=`<div class="ldHero W"><div class="ldState"><span class="wa">🟡 ΠΑΡΑΚΟΛΟΥΘΗΣΗ</span> <span class="${dC(main)}">${dN(main)}</span></div><div class="sub">περιμένει σκούπισμα της άκρης & επιστροφή με νέο OI${ep.reentered?" · μετά από stop":""}</div><div class="ldFacts">${fact("Φόρτωμα από",tA(T[ep.start]+3e5)+(ep.re?` <span class="sm mut">ξανά ×${ep.re}</span>`:""))}${fact("Βάση BTC",px(ep.base))}${fact("BTC τώρα",px(btcNow))}${fact("Από τη βάση",pc(fb),fb>0?"up":"dn")}</div>`}}
+  else if(earl.length){const o=earl[0];hero=`<div class="ldHero Q"><div class="ldState" style="color:#c9b46a">◌ ΠΡΩΙΜΗ ΕΝΔΕΙΞΗ <span class="${dC(o)}">${dN(o)}</span></div><div class="sub">${earlTxt(o)} · από ${tA(T[o.ep.start]+3e5)} · δεν έχει μετρηθεί, δεν δίνει είσοδο μόνη της</div><div class="ldFacts">${fact("BTC τώρα",px(btcNow))}${fact("Σύμβολα",(o.ep.syms||[]).length)}</div>`}
+  else hero=`<div class="ldHero Q"><div class="ldState mut">— ΗΣΥΧΑ</div><div class="sub">κανένα φόρτωμα σε εξέλιξη</div><div class="ldFacts">${fact("BTC τώρα",px(btcNow))}</div>`;
+  hero+=rest.map(o=>isEarly(o)?`<div class="ldEarly">↳ πρώιμη ένδειξη προς <b class="${dC(o)}">${dN(o)}</b> από ${tA(T[o.ep.start]+3e5)} · ${earlTxt(o)} (${(o.ep.syms||[]).length} σύμβολα) · δεν έχει μετρηθεί, δεν δίνει είσοδο μόνη της</div>`:`<div class="ldEarly">↳ και παρακολούθηση <b class="${dC(o)}">${dN(o)}</b> από ${tA(T[o.ep.start]+3e5)} · βάση BTC ${px(o.ep.base)}</div>`).join("")+"</div>";
+  el("ldV").className="";el("ldV").innerHTML=hero;
   // --- συνεδρία ---
   const si=sessIdx(at);const nx=nextOpen(at);const mins=Math.round((nx[0]-at)/6e4);const hl=HIST.long[si],hs=HIST.short[si];
-  el("ldS").innerHTML=`${SESS[si][2]} · επόμενο άνοιγμα <b>${nx[1]}</b> σε ${mins>=60?Math.floor(mins/60)+"ω "+(mins%60)+"′":mins+"′"} · ιστορικά εδώ η κίνηση ήρθε: long ${hl[0]}% με φόρτωμα / ${hl[1]}% χωρίς · short ${hs[0]}% / ${hs[1]}%`;
+  el("ldS").className="ldSess";el("ldS").innerHTML=`<div><span class="t">Συνεδρία</span><b>${SESS[si][2]}</b></div><div><span class="t">Επόμενο άνοιγμα</span><b>${nx[1]}</b> <span class="wa">σε ${mins>=60?Math.floor(mins/60)+"ω "+(mins%60)+"′":mins+"′"}</span></div><div class="hist"><span class="t">Ιστορικά εδώ η κίνηση ήρθε</span>long <b>${hl[0]}%</b> με φόρτωμα / ${hl[1]}% χωρίς · short <b>${hs[0]}%</b> / ${hs[1]}%</div>`;
   // --- ακολουθία ---
   const last12=ev.filter(e=>at-e.t<=12*36e5);
-  el("ldSeq").innerHTML=last12.length?last12.slice(-14).map(e=>{let x=`<div class="row" style="padding:5px 0"><div><b>${tA(e.t+3e5)}</b> <span class="${e.dir>0?'up':'dn'}">${e.dir>0?'L':'S'}</span> ${e.label}`;
-    if(e.type==="watch")x+=` <span class="mut sm">· ${e.n} σύμβολα · OI ${pc(e.m.moi)} σε 30′ · ${e.dir>0?'αγοραστές':'πωλητές'} ${(e.dir>0?e.m.tk:1/e.m.tk).toFixed(2)}${e.w==='πρώιμο'?' · <b>πρώιμο</b>, δεν έχει μετρηθεί':e.w!=='ισχυρό'?' · '+e.w:''}</span>`;
-    if(e.type==="entry")x+=` <span class="mut sm">· άκρη ${px(e.edge)} · ${e.list.length} σύμβολα</span>`;
-    if(e.type==="exh"||e.type==="end")x+=` <span class="mut sm">· ${pc(e.gain)}${e.peak!==undefined?' · κορυφή '+pc(e.peak):''}</span>`;
-    return x+(e.score?`<div class="mut sm">📊 ${e.score}</div>`:'')+`</div><div class="mut sm">BTC ${px(e.px)}</div></div>`}).join(""):'<p class="mut sm">Τίποτα τις τελευταίες 12 ώρες.</p>';
+  el("ldSeq").innerHTML=last12.length?last12.slice(-14).reverse().map(e=>{let sub="";
+    if(e.type==="watch")sub=`${e.n} σύμβολα · OI ${pc(e.m.moi)} σε 30′ · ${e.dir>0?"αγοραστές":"πωλητές"} ${(e.dir>0?e.m.tk:1/e.m.tk).toFixed(2)}${e.w==="πρώιμο"?" · <b>πρώιμο</b>, δεν έχει μετρηθεί":e.w!=="ισχυρό"?" · "+e.w:""}`;
+    if(e.type==="entry")sub=`άκρη ${px(e.edge)} · ${e.list.length} σύμβολα`;
+    if(e.type==="exh"||e.type==="end")sub=`${pc(e.gain)}${e.peak!==undefined?" · κορυφή "+pc(e.peak):""}`;
+    return `<div class="ldEv ${e.dir>0?"L":"S"}${e.type==="fade"?" x":""}${e.type==="entry"?" hot":""}"><div class="tm">${tA(e.t+3e5)}<span class="${e.dir>0?"up":"dn"}">${e.dir>0?"LONG":"SHORT"}</span></div><div class="bd"><div class="lb">${e.label}</div>${sub?`<div class="sm mut">${sub}</div>`:""}${e.score?`<div class="sm mut">📊 ${e.score}</div>`:""}</div><div class="px">BTC<br><b>${px(e.px)}</b></div></div>`}).join(""):'<p class="mut sm">Τίποτα τις τελευταίες 12 ώρες.</p>';
   // --- λίστα εισόδου (αν υπάρχει κίνηση ανοιχτή) ---
   const mv=open.find(o=>o.ep.phase==="move");const ent=mv?ev.filter(e=>e.type==="entry"&&e.dir===mv.ep.dir).pop():null;
-  el("ldEntry").innerHTML=ent?`<div class="h" style="margin-top:12px">🎯 Σήματα εισόδου ${tA(ent.t+3e5)} · ${ent.list.length} σύμβολα · όλα, με σειρά φορτώματος</div><div class="scroll"><table><thead><tr><th>#</th><th>Σύμβολο</th><th>Αναφορά</th><th>Άκρη (fake)</th><th>OI 30′ τότε</th><th>Τώρα</th></tr></thead><tbody>${ent.list.map((z,i)=>{const d=D[z.s];const now=d?d.c[j]:NaN;const g=ent.dir*(now/z.ref-1);return `<tr><td>${i+1}</td><td><b>${z.s.replace("USDT","")}</b></td><td>${px(z.ref)}</td><td>${px(z.edge)}</td><td class="up">${pc(z.dO)}</td><td class="${g>0?'up':'dn'}">${pc(g)}</td></tr>`}).join("")}</tbody></table></div>`:"";
+  el("ldEntry").innerHTML=ent?`<div class="ldSec">🎯 Σήματα εισόδου ${tA(ent.t+3e5)} · ${ent.list.length} σύμβολα · όλα, με σειρά φορτώματος</div><div class="scroll"><table class="ldTb"><thead><tr><th>#</th><th>Σύμβολο</th><th>Αναφορά</th><th>Άκρη (fake)</th><th>OI 30′ τότε</th><th>Τώρα</th></tr></thead><tbody>${ent.list.map((z,i)=>{const d=D[z.s];const now=d?d.c[j]:NaN;const g=ent.dir*(now/z.ref-1);return `<tr><td>${i+1}</td><td><b>${z.s.replace("USDT","")}</b></td><td>${px(z.ref)}</td><td>${px(z.edge)}</td><td class="up">${pc(z.dO)}</td><td class="${g>0?'up':'dn'}">${pc(g)}</td></tr>`}).join("")}</tbody></table></div>`:"";
   // --- ανά σύμβολο ---
   const rows=Object.entries(S).filter(([s])=>D[s]).sort((a,b)=>{const A=a[1],B_=b[1];if(A.ex!==B_.ex)return A.ex?1:-1;if(A.ex&&B_.ex)return LSYMS.indexOf(a[0])-LSYMS.indexOf(b[0]);if(fin(A.dO)!==fin(B_.dO))return fin(A.dO)?-1:1;const o=ORD[A.st]-ORD[B_.st];if(o)return o;return Math.abs(B_.dO||0)-Math.abs(A.dO||0)});
   const arrow=(v,inv)=>!fin(v)?'<span class="mut">—</span>':`<span class="${(inv?-v:v)>0.1?'up':(inv?-v:v)<-0.1?'dn':'mut'}">${v>0?'+':''}${v.toFixed(1)}</span>`;
   const pctTxt=(s,k,x)=>{const p=pctOf(PCT.v[s]&&PCT.v[s][k],x);return fin(p)?`<span class="mut sm">${p}ο</span>`:''};
-  el("ldT").innerHTML=`<table><thead><tr><th>Σύμβολο</th><th style="text-align:left">Τιμή 3ω</th><th style="text-align:left">OI 3ω</th><th>Τιμή 30′</th><th>OI 30′</th><th>Αγ./πωλ.</th><th>Μεγάλοι 4ω</th><th>Λιανική 4ω</th><th>Ρευστ. 15′ L/S</th><th style="text-align:left">Κατάσταση</th></tr></thead><tbody>`+
-    rows.map(([s,x])=>{const d=D[s];const cs=d.c.slice(-SPARK),os=d.oi.slice(-SPARK);const [w0,cl]=STW[x.st];const w=x.ex?w0+' <span class="mut sm">(εκτός συνόλων crypto)</span>':w0;const j_=d.c.length-1;
-      return `<tr><td>${DOT[x.st]} <b>${LNAME[s]||s.replace("USDT","")}</b></td><td style="text-align:left">${spark(cs,96,22,x.r30>0?'#22c55e':'#ef4444')}</td><td style="text-align:left">${spark(os,96,22,fin(x.dO)&&x.dO>0?'#3b82f6':'#8592a6')}</td><td class="${x.r30>0?'up':x.r30<0?'dn':''}">${pc(x.r30)}</td><td class="${x.dO>0?'up':x.dO<0?'dn':''}">${pc(x.dO)}</td><td>${fin(x.tk)?x.tk.toFixed(2):'—'}</td><td>${arrow(x.top4)} ${pctTxt(s,'top',d.top[j_])}</td><td>${arrow(x.ret4,true)} ${pctTxt(s,'ret',d.ret[j_])}</td><td class="sm">${window.__lqHas?`<span class="dn">${usd(x.lqL)}</span>/<span class="up">${usd(x.lqS)}</span>`:'<span class="mut">—</span>'}</td><td style="text-align:left" class="${cl}">${w}</td></tr>`}).join("")+"</tbody></table>";
+  const CH={up:"c-up",wa:"c-wa",dn:"c-dn",mut:"c-mut"};let sep=false;
+  el("ldT").innerHTML=`<table class="ldTb"><thead><tr><th>Σύμβολο</th><th style="text-align:left">Τιμή 3ω</th><th style="text-align:left">OI 3ω</th><th>Τιμή 30′</th><th>OI 30′</th><th>Αγ./πωλ.</th><th>Μεγάλοι 4ω</th><th>Λιανική 4ω</th><th>Ρευστ. 15′ L/S</th><th style="text-align:left">Κατάσταση</th></tr></thead><tbody>`+
+    rows.map(([s,x])=>{const d=D[s];const cs=d.c.slice(-SPARK),os=d.oi.slice(-SPARK);const [w0,cl]=STW[x.st];const j_=d.c.length-1;let pre="";if(x.ex&&!sep){sep=true;pre='<tr class="ldSep"><td colspan="10">Εκτός συνόλων crypto · χρυσός & δείκτες ΗΠΑ</td></tr>'}
+      return pre+`<tr class="st-${x.st}"><td>${DOT[x.st]} <b>${LNAME[s]||s.replace("USDT","")}</b></td><td style="text-align:left">${spark(cs,96,22,x.r30>0?'#22c55e':'#ef4444')}</td><td style="text-align:left">${spark(os,96,22,fin(x.dO)&&x.dO>0?'#3b82f6':'#8592a6')}</td><td class="${x.r30>0?'up':x.r30<0?'dn':''}"><b>${pc(x.r30)}</b></td><td class="${x.dO>0?'up':x.dO<0?'dn':''}"><b>${pc(x.dO)}</b></td><td class="${x.tk>1.1?'up':x.tk<0.9?'dn':''}">${fin(x.tk)?x.tk.toFixed(2):'—'}</td><td>${arrow(x.top4)} ${pctTxt(s,'top',d.top[j_])}</td><td>${arrow(x.ret4,true)} ${pctTxt(s,'ret',d.ret[j_])}</td><td class="sm">${window.__lqHas?`<span class="dn">${usd(x.lqL)}</span>/<span class="up">${usd(x.lqS)}</span>`:'<span class="mut">—</span>'}</td><td style="text-align:left">${x.st==="none"?'<span class="mut">·</span>':`<span class="ldChip ${CH[cl]||"c-mut"}">${w0}</span>`}</td></tr>`}).join("")+"</tbody></table>";
   const cnt={};for(const [s,x] of rows)if(!x.ex)cnt[x.st]=(cnt[x.st]||0)+1;const absN=(cnt.absorb||0)+(cnt.absorbliq||0)+(cnt.transfer||0);
-  el("ldK").innerHTML=`<span class="up">↑ φορτώνουν ${cnt.load||0}</span> · <span class="wa">⏸ απορρόφηση ${absN}${cnt.absorbliq?' (ρευστοπ. '+cnt.absorbliq+')':''}${cnt.transfer?' (μεγάλοι '+cnt.transfer+')':''}</span> · <span class="dn">↓ ρευστοποίηση ${cnt.liq||0}</span> · <span class="wa">⚡ shorts ανοίγουν ${cnt.shorts||0}</span> · <span class="mut">↑ κάλυψη ${cnt.cover||0}</span> · OI αγοράς 30′ <b>${pc(m.moi)}</b> · αγοραστές/πωλητές 30′ <b>${fin(m.tk)?m.tk.toFixed(2):'—'}</b> · έχει τρέξει 4ω <b>${fin(m.ext)?m.ext.toFixed(2):'—'} ATR</b>${window.__lqHas?'':' · <span class="mut">ρευστοποιήσεις: χωρίς δεδομένα ακόμα (γεμίζουν όσο η σελίδα είναι ανοιχτή)</span>'}`;
+  const kp=(t,v,c,z)=>`<div class="ldF${z?" z":""}"><div class="t">${t}</div><div class="v ${c||""}">${v}</div></div>`;
+  el("ldK").className="ldKp";el("ldK").innerHTML=kp("↑ Φορτώνουν",cnt.load||0,"up",!cnt.load)+kp("⏸ Απορρόφηση",absN,"wa",!absN)+kp("↓ Ρευστοποίηση",cnt.liq||0,"dn",!cnt.liq)+kp("⚡ Shorts ανοίγουν",cnt.shorts||0,"wa",!cnt.shorts)+kp("↑ Κάλυψη",cnt.cover||0,"",!cnt.cover)+kp("OI αγοράς 30′",pc(m.moi),m.moi>0?"up":m.moi<0?"dn":"")+kp("Αγοραστές / πωλητές",fin(m.tk)?m.tk.toFixed(2):"—",m.tk>1.05?"up":m.tk<0.95?"dn":"")+kp("Έχει τρέξει 4ω",(fin(m.ext)?m.ext.toFixed(2):"—")+' <span class="sm mut">ATR</span>')+(window.__lqHas?"":'<div class="sm mut" style="grid-column:1/-1">ρευστοποιήσεις: χωρίς δεδομένα ακόμα (γεμίζουν όσο η σελίδα είναι ανοιχτή)</div>');
   // --- ημερολόγιο ---
   const btc=D.BTCUSDT.c[j];for(const e of ev){if(e.type==="watch"&&e.w==="ασθενές")continue;const key=e.type+e.dir+e.t;if(!LOG.find(x=>x.key===key))LOG.unshift({key,ts:e.t+3e5,dir:e.dir,type:e.type,t:e.label,px:e.px})}
   LOG.sort((a,b)=>b.ts-a.ts);LOG=LOG.slice(0,300);
