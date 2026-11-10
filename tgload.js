@@ -11,7 +11,7 @@ const TH={
   exh:{near:0.0015,oiDrop:0.002,tk:1.05,minGain:0.003},  // 🔴 εξασθένηση
   end:{drop:0.003,tk:0.9},moveMax:72,                    // ❌ τέλος
 };
-const EXCL=new Set(["XAUUSDT"]);
+const EXCL=new Set(["XAUUSDT","QQQUSDT","SPYUSDT"]);
 const sum=(a,i,n)=>{let s=0;for(let k=i-n+1;k<=i;k++)s+=a[k]||0;return s};
 const fin=x=>Number.isFinite(x);
 function symStates(D,syms,j){

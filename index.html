@@ -36,7 +36,7 @@ tr.click{cursor:pointer}tr.click:hover{background:#121b2b}tr.sel{background:#142
 <header><div class="logo">Trading<b>Gym</b> · Πρόβλεψη</div><select id="sym" class="btn"></select><div id="tabs" style="display:flex;gap:6px"></div><div class="btn" id="cd">⏱ —</div><div class="badge" id="badge">ΠΕΙΡΑΜΑΤΙΚΟ · σε σκιώδη έλεγχο</div></header>
 <div class="sm mut" id="status" style="margin:-6px 0 12px">—</div>
 <div id="notes"></div>
-<div class="card" id="ldCard"><div class="h">⚡ Φόρτωμα αγοράς · ζωντανό ανά 5′ <span id="ldAt" style="text-transform:none;letter-spacing:0"></span> <span style="font:600 10px monospace;border:1px solid var(--line);border-radius:4px;padding:1px 5px;letter-spacing:0">ΔΟΚΙΜΑΣΤΙΚΟ v2.5 · 09/11</span></div>
+<div class="card" id="ldCard"><div class="h">⚡ Φόρτωμα αγοράς · ζωντανό ανά 5′ <span id="ldAt" style="text-transform:none;letter-spacing:0"></span> <span style="font:600 10px monospace;border:1px solid var(--line);border-radius:4px;padding:1px 5px;letter-spacing:0">ΔΟΚΙΜΑΣΤΙΚΟ v2.6 · 10/11</span></div>
 <div id="ldV" class="sm">Φόρτωση…</div>
 <div id="ldS" class="sm mut" style="margin:8px 0 10px"></div>
 <div class="h" style="margin-top:4px">Ακολουθία · τελευταίες 12 ώρες</div><div id="ldSeq"></div>
@@ -354,7 +354,7 @@ async function start(){const T=$("tabs");T.innerHTML="";for(const tf in TFS){con
   await refresh(cur);for(const tf of Object.keys(TFS))if(tf!==cur&&!CACHE[tf])await refresh(tf);}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&MODELS&&CACHE[cur]&&Date.now()>CACHE[cur].latest+2*TFS[cur].ms+20000)refresh(cur)});
 </script>
-<script src="tgload.js?v=25"></script>
+<script src="tgload.js?v=26"></script>
 <script>
 // ===== ⚡ Φόρτωμα αγοράς v2 · ζωντανό ανά 5′ · ξαναπαίζει τις τελευταίες 8ω σε κάθε ανανέωση =====
 (function(){
@@ -374,15 +374,16 @@ function nextOpen(now){const d=new Date(now);const c=[];
     const nyMid=Date.UTC(+p.year,+p.month-1,+p.day,0,0);const localNow=Date.UTC(+p.year,+p.month-1,+p.day,+p.hour%24,+p.minute);const off=localNow-Math.floor((now+k*864e5)/6e4)*6e4;const x=nyMid+9.5*36e5-off;if(x>now){c.push([x,"Νέα Υόρκη"]);break}}
   c.sort((a,b)=>a[0]-b[0]);return c[0]}
 // ποσοστημόρια μεγάλων/λιανικής: ωριαίο ιστορικό ~20 ημερών, ανανεώνεται κάθε ώρα
+const LSYMS=SYMS.concat(["QQQUSDT","SPYUSDT"]);const LNAME={QQQUSDT:"Nasdaq (QQQ)",SPYUSDT:"S&P 500 (SPY)"};
 let PCT={at:0,v:{}};
 async function pctRefresh(){if(Date.now()-PCT.at<36e5)return;const v={};
-  await pool(SYMS,4,async s=>{const q=`symbol=${s}&period=1h&limit=500`;const [tp,gl]=await Promise.all([j(`${API}/futures/data/topLongShortPositionRatio?${q}`).catch(()=>[]),j(`${API}/futures/data/globalLongShortAccountRatio?${q}`).catch(()=>[])]);
+  await pool(LSYMS,4,async s=>{const q=`symbol=${s}&period=1h&limit=500`;const [tp,gl]=await Promise.all([j(`${API}/futures/data/topLongShortPositionRatio?${q}`).catch(()=>[]),j(`${API}/futures/data/globalLongShortAccountRatio?${q}`).catch(()=>[])]);
     v[s]={top:tp.map(x=>+x.longAccount).filter(fin).sort((a,b)=>a-b),ret:gl.map(x=>+x.longAccount).filter(fin).sort((a,b)=>a-b)}});
   PCT={at:Date.now(),v}}
 const pctOf=(arr,x)=>{if(!arr||!arr.length||!fin(x))return NaN;let lo=0,hi=arr.length;while(lo<hi){const m=(lo+hi)>>1;if(arr[m]<=x)lo=m+1;else hi=m}return Math.round(lo/arr.length*100)};
 async function fetchAll(){
   const D={};const now=Date.now();
-  await pool(SYMS,5,async s=>{const q=`symbol=${s}&period=5m&limit=${NB}`;
+  await pool(LSYMS,5,async s=>{const q=`symbol=${s}&period=5m&limit=${NB}`;
     const [k5,k4,oi,tp,gl]=await Promise.all([j(`${API}/fapi/v1/klines?symbol=${s}&interval=5m&limit=${NB}`),j(`${API}/fapi/v1/klines?symbol=${s}&interval=4h&limit=30`),j(`${API}/futures/data/openInterestHist?${q}`),j(`${API}/futures/data/topLongShortPositionRatio?${q}`).catch(()=>[]),j(`${API}/futures/data/globalLongShortAccountRatio?${q}`).catch(()=>[])]);
     const c4=k4.filter(x=>+x[6]<now);let tr=[];for(let i=1;i<c4.length;i++){const h=+c4[i][2],l=+c4[i][3],p=+c4[i-1][4];tr.push(Math.max(h-l,Math.abs(h-p),Math.abs(l-p)))}
     D[s]={k:new Map(k5.filter(x=>+x[6]<now).map(x=>[+x[0],x])),oi:new Map(oi.map(x=>[+x.timestamp,+x.sumOpenInterestValue])),tp:new Map(tp.map(x=>[+x.timestamp,+x.longAccount])),gl:new Map(gl.map(x=>[+x.timestamp,+x.longAccount])),atr4:tr.slice(-14).reduce((a,b)=>a+b,0)/Math.max(1,Math.min(14,tr.length))}});
@@ -391,7 +392,7 @@ async function fetchAll(){
   const LQ=Array.isArray(window.LIQ)?window.LIQ:[];const t0=T[0],nT=T.length;const lqIdx={};
   for(const x of LQ){const k=Math.floor((x.t-t0)/3e5);if(k<0||k>=nT||!D[x.s])continue;const a=lqIdx[x.s]||(lqIdx[x.s]={L:new Float64Array(nT),S:new Float64Array(nT)});a[x.side==="L"?"L":"S"][k]+=x.v}
   window.__lqHas=LQ.length>0;
-  const out={};for(const s of SYMS){const d=D[s];if(!d)continue;const K=t=>d.k.get(t);
+  const out={};for(const s of LSYMS){const d=D[s];if(!d)continue;const K=t=>d.k.get(t);
     out[s]={t:T,o:T.map(t=>K(t)?+K(t)[1]:NaN),h:T.map(t=>K(t)?+K(t)[2]:NaN),l:T.map(t=>K(t)?+K(t)[3]:NaN),c:T.map(t=>K(t)?+K(t)[4]:NaN),qv:T.map(t=>K(t)?+K(t)[7]:NaN),tbq:T.map(t=>K(t)?+K(t)[10]:NaN),oi:T.map(t=>g(d.oi,t)),top:T.map(t=>g(d.tp,t)),ret:T.map(t=>g(d.gl,t)),atr4:d.atr4,liqL:lqIdx[s]?Array.from(lqIdx[s].L):undefined,liqS:lqIdx[s]?Array.from(lqIdx[s].S):undefined}}
   await pctRefresh();return out}
 function spark(a,w,h,col){const v=a.filter(fin);if(v.length<2)return"";let mn=Math.min(...v),mx=Math.max(...v);if(mx===mn)mx=mn+1e-9;const n=a.length;
@@ -423,12 +424,12 @@ function render(D,out,at){
   const mv=open.find(o=>o.ep.phase==="move");const ent=mv?ev.filter(e=>e.type==="entry"&&e.dir===mv.ep.dir).pop():null;
   el("ldEntry").innerHTML=ent?`<div class="h" style="margin-top:12px">🎯 Σήματα εισόδου ${tA(ent.t+3e5)} · ${ent.list.length} σύμβολα · όλα, με σειρά φορτώματος</div><div class="scroll"><table><thead><tr><th>#</th><th>Σύμβολο</th><th>Αναφορά</th><th>Άκρη (fake)</th><th>OI 30′ τότε</th><th>Τώρα</th></tr></thead><tbody>${ent.list.map((z,i)=>{const d=D[z.s];const now=d?d.c[j]:NaN;const g=ent.dir*(now/z.ref-1);return `<tr><td>${i+1}</td><td><b>${z.s.replace("USDT","")}</b></td><td>${px(z.ref)}</td><td>${px(z.edge)}</td><td class="up">${pc(z.dO)}</td><td class="${g>0?'up':'dn'}">${pc(g)}</td></tr>`}).join("")}</tbody></table></div>`:"";
   // --- ανά σύμβολο ---
-  const rows=Object.entries(S).filter(([s])=>D[s]).sort((a,b)=>{const A=a[1],B_=b[1];if(A.ex!==B_.ex)return A.ex?1:-1;if(fin(A.dO)!==fin(B_.dO))return fin(A.dO)?-1:1;const o=ORD[A.st]-ORD[B_.st];if(o)return o;return Math.abs(B_.dO||0)-Math.abs(A.dO||0)});
+  const rows=Object.entries(S).filter(([s])=>D[s]).sort((a,b)=>{const A=a[1],B_=b[1];if(A.ex!==B_.ex)return A.ex?1:-1;if(A.ex&&B_.ex)return LSYMS.indexOf(a[0])-LSYMS.indexOf(b[0]);if(fin(A.dO)!==fin(B_.dO))return fin(A.dO)?-1:1;const o=ORD[A.st]-ORD[B_.st];if(o)return o;return Math.abs(B_.dO||0)-Math.abs(A.dO||0)});
   const arrow=(v,inv)=>!fin(v)?'<span class="mut">—</span>':`<span class="${(inv?-v:v)>0.1?'up':(inv?-v:v)<-0.1?'dn':'mut'}">${v>0?'+':''}${v.toFixed(1)}</span>`;
   const pctTxt=(s,k,x)=>{const p=pctOf(PCT.v[s]&&PCT.v[s][k],x);return fin(p)?`<span class="mut sm">${p}ο</span>`:''};
   el("ldT").innerHTML=`<table><thead><tr><th>Σύμβολο</th><th style="text-align:left">Τιμή 3ω</th><th style="text-align:left">OI 3ω</th><th>Τιμή 30′</th><th>OI 30′</th><th>Αγ./πωλ.</th><th>Μεγάλοι 4ω</th><th>Λιανική 4ω</th><th>Ρευστ. 15′ L/S</th><th style="text-align:left">Κατάσταση</th></tr></thead><tbody>`+
     rows.map(([s,x])=>{const d=D[s];const cs=d.c.slice(-SPARK),os=d.oi.slice(-SPARK);const [w0,cl]=STW[x.st];const w=x.ex?w0+' <span class="mut sm">(εκτός συνόλων crypto)</span>':w0;const j_=d.c.length-1;
-      return `<tr><td>${DOT[x.st]} <b>${s.replace("USDT","")}</b></td><td style="text-align:left">${spark(cs,96,22,x.r30>0?'#22c55e':'#ef4444')}</td><td style="text-align:left">${spark(os,96,22,fin(x.dO)&&x.dO>0?'#3b82f6':'#8592a6')}</td><td class="${x.r30>0?'up':x.r30<0?'dn':''}">${pc(x.r30)}</td><td class="${x.dO>0?'up':x.dO<0?'dn':''}">${pc(x.dO)}</td><td>${fin(x.tk)?x.tk.toFixed(2):'—'}</td><td>${arrow(x.top4)} ${pctTxt(s,'top',d.top[j_])}</td><td>${arrow(x.ret4,true)} ${pctTxt(s,'ret',d.ret[j_])}</td><td class="sm">${window.__lqHas?`<span class="dn">${usd(x.lqL)}</span>/<span class="up">${usd(x.lqS)}</span>`:'<span class="mut">—</span>'}</td><td style="text-align:left" class="${cl}">${w}</td></tr>`}).join("")+"</tbody></table>";
+      return `<tr><td>${DOT[x.st]} <b>${LNAME[s]||s.replace("USDT","")}</b></td><td style="text-align:left">${spark(cs,96,22,x.r30>0?'#22c55e':'#ef4444')}</td><td style="text-align:left">${spark(os,96,22,fin(x.dO)&&x.dO>0?'#3b82f6':'#8592a6')}</td><td class="${x.r30>0?'up':x.r30<0?'dn':''}">${pc(x.r30)}</td><td class="${x.dO>0?'up':x.dO<0?'dn':''}">${pc(x.dO)}</td><td>${fin(x.tk)?x.tk.toFixed(2):'—'}</td><td>${arrow(x.top4)} ${pctTxt(s,'top',d.top[j_])}</td><td>${arrow(x.ret4,true)} ${pctTxt(s,'ret',d.ret[j_])}</td><td class="sm">${window.__lqHas?`<span class="dn">${usd(x.lqL)}</span>/<span class="up">${usd(x.lqS)}</span>`:'<span class="mut">—</span>'}</td><td style="text-align:left" class="${cl}">${w}</td></tr>`}).join("")+"</tbody></table>";
   const cnt={};for(const [s,x] of rows)if(!x.ex)cnt[x.st]=(cnt[x.st]||0)+1;const absN=(cnt.absorb||0)+(cnt.absorbliq||0)+(cnt.transfer||0);
   el("ldK").innerHTML=`<span class="up">↑ φορτώνουν ${cnt.load||0}</span> · <span class="wa">⏸ απορρόφηση ${absN}${cnt.absorbliq?' (ρευστοπ. '+cnt.absorbliq+')':''}${cnt.transfer?' (μεγάλοι '+cnt.transfer+')':''}</span> · <span class="dn">↓ ρευστοποίηση ${cnt.liq||0}</span> · <span class="wa">⚡ shorts ανοίγουν ${cnt.shorts||0}</span> · <span class="mut">↑ κάλυψη ${cnt.cover||0}</span> · OI αγοράς 30′ <b>${pc(m.moi)}</b> · αγοραστές/πωλητές 30′ <b>${fin(m.tk)?m.tk.toFixed(2):'—'}</b> · έχει τρέξει 4ω <b>${fin(m.ext)?m.ext.toFixed(2):'—'} ATR</b>${window.__lqHas?'':' · <span class="mut">ρευστοποιήσεις: χωρίς δεδομένα ακόμα (γεμίζουν όσο η σελίδα είναι ανοιχτή)</span>'}`;
   // --- ημερολόγιο ---
@@ -438,7 +439,7 @@ function render(D,out,at){
   ls.set(KEY,JSON.stringify(LOG));
   el("ldL").innerHTML=LOG.length?`<table><thead><tr><th>Πότε</th><th style="text-align:left">Τι είπε</th><th>BTC</th><th>+1ω</th><th>+4ω</th></tr></thead><tbody>`+LOG.slice(0,20).map(e=>{const f=v=>v==null?"<span class='mut'>…</span>":`<span class="${e.dir*v>0?'up':'dn'}">${pc(v)}</span>`;return `<tr><td>${new Date(e.ts).toLocaleString("el-GR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Athens"})}</td><td style="text-align:left">${e.t}</td><td>${px(e.px)}</td><td>${f(e.p1)}</td><td>${f(e.p4)}</td></tr>`}).join("")+"</tbody></table>":'<p class="mut sm">Καμία καταγραφή ακόμα.</p>';
   el("ldAt").textContent="· "+tA(T[j]+3e5);}
-async function run(){if(BUSY)return;BUSY=true;try{const D=await fetchAll();const out=TGLOAD.run(D,SYMS);LASTOUT={D,out};window.TGLOAD_LAST=LASTOUT;render(D,out,Date.now());el("ldErr").textContent=""}catch(e){el("ldErr").textContent="Πρόβλημα φόρτωσης (Binance). Ξαναπροσπαθώ στο επόμενο 5λεπτο."}finally{BUSY=false}
+async function run(){if(BUSY)return;BUSY=true;try{const D=await fetchAll();const out=TGLOAD.run(D,LSYMS);LASTOUT={D,out};window.TGLOAD_LAST=LASTOUT;render(D,out,Date.now());el("ldErr").textContent=""}catch(e){el("ldErr").textContent="Πρόβλημα φόρτωσης (Binance). Ξαναπροσπαθώ στο επόμενο 5λεπτο."}finally{BUSY=false}
   const now=Date.now();const next=Math.ceil(now/3e5)*3e5+25e3;clearTimeout(TIMER);TIMER=setTimeout(run,next-now)}
 function boot(){const app=document.getElementById("app");if(!app||app.style.display==="none"||!window.TGLOAD){setTimeout(boot,1000);return}run()}
 boot();
