@@ -76,7 +76,7 @@ table.ldTb tr.ldSep td{position:static;background:#0a0f1a;color:#9fb0c9;font:700
 <header><div class="logo">Trading<b>Gym</b> · Πρόβλεψη</div><select id="sym" class="btn"></select><div id="tabs" style="display:flex;gap:6px"></div><div class="btn" id="cd">⏱ —</div><div class="badge" id="badge">ΠΕΙΡΑΜΑΤΙΚΟ · σε σκιώδη έλεγχο</div></header>
 <div class="sm mut" id="status" style="margin:-6px 0 12px">—</div>
 <div id="notes"></div>
-<div class="card" id="ldCard"><div class="ldTop"><div class="ldTitle">⚡ Φόρτωμα <b>αγοράς</b></div><span class="ldLive"><i></i>ΖΩΝΤΑΝΟ 5′ <span id="ldAt"></span></span><span class="ldVer">v3.0 · 10/11</span></div>
+<div class="card" id="ldCard"><div class="ldTop"><div class="ldTitle">⚡ Φόρτωμα <b>αγοράς</b></div><span class="ldLive"><i></i>ΖΩΝΤΑΝΟ 5′ <span id="ldAt"></span></span><span class="ldVer">v3.1 · 10/11</span></div>
 <div id="ldV" class="sm">Φόρτωση…</div>
 <div id="ldK"></div>
 <div id="ldS"></div>
@@ -86,6 +86,8 @@ table.ldTb tr.ldSep td{position:static;background:#0a0f1a;color:#9fb0c9;font:700
 <div class="scroll" id="ldT" style="max-height:640px;overflow-y:auto"></div>
 <details style="margin-top:8px"><summary class="sm" style="cursor:pointer;color:var(--mut)">Ημερολόγιο (σε αυτή τη συσκευή) · τι είπε και τι έκανε το BTC μετά</summary><div id="ldL" style="margin-top:8px"></div></details>
 <p class="sm mut" style="margin:8px 0 0">⏸ απορρόφηση: πωλητές/ρευστοποιήσεις που δεν ρίχνουν την τιμή ενώ το OI κρατάει, ή μεγάλοι ▲ με λιανική ▼ σε σταθερό OI (μεταφορά θέσεων). Ρευστοποιήσεις = δείγμα Binance, μόνο όσο η σελίδα είναι ανοιχτή. 🟡 φόρτωμα → παρακολούθηση · 🎯 είσοδος μετά από σκούπισμα της άκρης και επιστροφή με νέο OI (η άκρη του fake = αναφορά stop) · 🔴 εξασθένηση: νέα άκρα ενώ το OI φεύγει · ❌ τέλος: χάθηκε το ενδιαφέρον ή ρευστοποίηση στην άλλη πλευρά. Ξεχωριστό στρώμα από το μοντέλο 4H, δεν το αλλάζει. Μετρημένο 2021–26 σε 22 crypto· η απορρόφηση σημειώνεται ως ασθενέστερη. <span id="ldErr" class="wa"></span></p></div>
+<div class="card tgx" id="opCard"></div>
+<div class="card tgx" id="whCard"></div>
 <div class="grid"><div>
  <div class="card"><div class="h" id="chh">Γράφημα</div><div id="chart"></div></div>
  <div class="card"><div class="h" id="prh">Πρόβλεψη</div><div class="cards4" id="pred"></div><div id="entry" style="margin-top:10px"></div></div>
@@ -495,4 +497,5 @@ async function run(){if(BUSY)return;BUSY=true;try{const D=await fetchAll();const
 function boot(){const app=document.getElementById("app");if(!app||app.style.display==="none"||!window.TGLOAD){setTimeout(boot,1000);return}run()}
 boot();
 })();
-</script></body></html>
+</script>
+<script src="tgopen.js?v=31"></script></body></html>
