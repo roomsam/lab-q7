@@ -27,14 +27,42 @@ function msg0(e,D,now){const delay=Math.round((now-(e.t+3e5))/6e4);const hdr=`**
   if(e.type==="end")return `${hdr} · αποτέλεσμα ${pc(e.gain)} · κορυφή ${pc(e.peak)}`;
   if(e.type==="fade")return hdr;
   return null}
+// ---- ⚡ σκούπισμα & επιστροφή: ειδοποίηση στιγμής («κοίτα τώρα», όχι σήμα) ----
+const SW={mn:0.0005,K:2,Ws:[[90,"7ω"],[48,"4ω"],[12,"1ω"]],fresh:10,cool:3,mkt:7};
+function newsBars(d,j){const out=[];for(let b=Math.max(51,j-48);b<j;b++){const r=(d.h[b]-d.l[b])/d.c[b];if(!(r>=0.006))continue;const pr=[];for(let k=b-50;k<b;k++){const v=(d.h[k]-d.l[k])/d.c[k];if(v===v)pr.push(v)}if(pr.length<30)continue;pr.sort((a,b)=>a-b);if(r>=5*pr[pr.length>>1])out.push(b)}return out}
+function swTry(d,j,dir,refAt,minI){for(let i=Math.max(minI,j-SW.K);i<=j;i++){const ref=refAt(i);if(!(ref>0)||!isFinite(ref))continue;
+    if(!(dir>0?d.l[i]<ref*(1-SW.mn):d.h[i]>ref*(1+SW.mn)))continue;if(!(dir>0?d.c[j]>ref:d.c[j]<ref))continue;
+    let early=false;for(let k=i;k<j;k++)if(dir>0?d.c[k]>ref:d.c[k]<ref){early=true;break}if(early)continue;
+    let edge=dir>0?Infinity:-Infinity;for(let k=i;k<=j;k++)edge=dir>0?Math.min(edge,d.l[k]):Math.max(edge,d.h[k]);return {ref,edge,i}}return null}
+function swAt(d,j,news){let best=null;for(const dir of [1,-1]){let hit=null;
+    if(news)for(const b of newsBars(d,j)){const r=swTry(d,j,dir,()=>dir>0?d.l[b]:d.h[b],b+1);if(r){hit=Object.assign(r,{dir,W:999,lab:"κεριού νέων "+tA(d.t[b]+3e5)});break}}
+    if(!hit)for(const [W,lab] of SW.Ws){const r=swTry(d,j,dir,i=>{if(i-W<0)return NaN;let ref=dir>0?Infinity:-Infinity;for(let k=i-W;k<i;k++){const v=dir>0?d.l[k]:d.h[k];if(v===v)ref=dir>0?Math.min(ref,v):Math.max(ref,v)}return ref},W);if(r){hit=Object.assign(r,{dir,W,lab});break}}
+    if(hit&&(!best||hit.W>best.W))best=hit}return best}
+function sweepEvents(D,j){const per={};for(const s of SYMS){const d=D[s];if(!d||!(d.c[j]===d.c[j]))continue;const e=swAt(d,j,s==="BTCUSDT");if(e)per[s]=e}
+  const cry=Object.keys(per).filter(s=>!TGLOAD.EXCL.has(s));const out=[];const nC=SYMS.filter(s=>D[s]&&!TGLOAD.EXCL.has(s)&&D[s].c[j]===D[s].c[j]).length;
+  for(const dir of [1,-1]){const list=cry.filter(s=>per[s].dir===dir);const b=per.BTCUSDT&&per.BTCUSDT.dir===dir?per.BTCUSDT:null;if(!b&&list.length<SW.mkt)continue;out.push({type:"sweep",dir,t:D.BTCUSDT.t[j],j,b,list,nC,W:b?b.W:0})}return out}
+function sweepMsg(e,D,out,now){const B=D.BTCUSDT,j=e.j;const delay=Math.round((now-(e.t+3e5))/6e4);const sg=x=>(x>0?"+":"")+x.toFixed(1);
+  const oi15=B.oi[j]/B.oi[j-3]-1;let a=0,b0=0;for(const s of SYMS){if(TGLOAD.EXCL.has(s)||!D[s])continue;const x=D[s].oi[j],y=D[s].oi[j-3];if(x>0&&y>0){a+=x;b0+=y}}const moi15=b0>0?a/b0-1:NaN;
+  const tk=k=>{let bq=0,q=0;for(let i=j-k+1;i<=j;i++){bq+=B.tbq[i];q+=B.qv[i]}return bq/(q-bq)};
+  const dTop=(B.top[j]-B.top[j-12])*100,dRet=(B.ret[j]-B.ret[j-12])*100;
+  const op=out.ev.filter(x=>x.type==="open").pop();const eng=op&&op.ep?(op.ep.phase==="move"?"🎯 σε κίνηση ":"🟡 παρακολούθηση ")+(op.ep.dir>0?"LONG":"SHORT"):"ήσυχα";
+  const side=e.dir>0?"ΚΑΤΩ":"ΠΑΝΩ";const l1=`**⚡ ΚΟΙΤΑ ΤΩΡΑ · σκούπισμα ${side} & επιστροφή** · ${tA(e.t+3e5)} · +${delay}′`;
+  const l2=e.b?`BTC **${px(B.c[j])}** · πέρασε το ${e.dir>0?"χαμηλό":"υψηλό"} ${e.b.lab} (${px(e.b.ref)}) έως **${px(e.b.edge)}** και γύρισε`:`BTC **${px(B.c[j])}** · το BTC δεν σκούπισε, σκουπίζει η αγορά`;
+  const l3=`OI BTC 15′ ${pc(oi15)} · OI αγοράς 15′ ${pc(moi15)} · αγοραστές/πωλητές κεριού ${tk(1).toFixed(2)} · 15′ ${tk(3).toFixed(2)}`;
+  const l4=`Μεγάλοι 1ω ${sg(dTop)} · Λιανική 1ω ${sg(dRet)} (μονάδες % long)`;
+  const l5=`Σκουπίζουν μαζί ${e.list.length}/${e.nC}${e.list.length?": "+e.list.map(nm).join(", "):""}`;
+  return [l1,l2,l3,l4,l5,`Μηχανή: ${eng}`,`_Ένδειξη στιγμής, όχι σήμα εισόδου. Ιστορικά 1 στις 4 τρέχει ≥0,5% πριν σπάσει η ουρά._`].join("\n")}
 async function post(content){if(DRY){console.log("DRY>",content.slice(0,300).replace(/\n/g," | "));return}const r=await fetch(HOOK,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({content:content.slice(0,1900)})});if(!r.ok)throw new Error("discord "+r.status)}
-(async()=>{
+if(process.env.LIB==="1"){module.exports={fetchAll,sweepEvents,sweepMsg,SYMS,TGLOAD,tA}}else (async()=>{
   if(!HOOK&&!DRY){console.log("no webhook");process.exit(0)}
   let st={sent:{}};try{st=JSON.parse(fs.readFileSync(STATE,"utf8"))}catch(e){}
   const D=await fetchAll();const out=TGLOAD.run(D,SYMS);const now=Date.now();
   const first=!Object.keys(st.sent).length;
   const ev=out.ev.filter(e=>e.type!=="open"&&!(e.type==="watch"&&e.w==="ασθενές")&&now-(e.t+3e5)<=(+process.env.WINDOW_MIN||(first?30:90))*6e4);
   let n=0;for(const e of ev){const key=e.type+"|"+e.dir+"|"+e.t;if(st.sent[key])continue;const m=msg(e,D,now);if(!m)continue;await post(m);st.sent[key]=now;n++}
+  // ⚡ σκούπισμα: μόνο φρέσκο (≤10′), με ανάπαυλα 3 κεριών ανά πλευρά εκτός αν σκουπίστηκε μεγαλύτερο άκρο
+  st.sw=st.sw||{};if(process.env.NO_SWEEP!=="1")for(const jj of [out.N-2,out.N-1]){if(jj<SW.Ws[2][0]+SW.K+1)continue;for(const e of sweepEvents(D,jj)){const key="sweep|"+e.dir+"|"+e.t;if(st.sent[key])continue;if(now-(e.t+3e5)>(+process.env.SWEEP_FRESH||SW.fresh)*6e4)continue;
+      const pv=st.sw[e.dir];if(pv&&e.t>pv.t&&e.t-pv.t<=SW.cool*3e5&&e.W<=pv.W)continue;await post(sweepMsg(e,D,out,now));st.sent[key]=now;st.sw[e.dir]={t:e.t,W:e.W};n++}}
   if(process.env.TEST_MSG==="1")await post("✅ Δοκιμή: οι ειδοποιήσεις «Φόρτωμα αγοράς» συνδέθηκαν. Τελευταίο κερί "+tA(D.BTCUSDT.t[out.N-1]+3e5)+" · BTC "+px(D.BTCUSDT.c[out.N-1]));
   for(const k in st.sent)if(now-st.sent[k]>3*864e5)delete st.sent[k];
   fs.mkdirSync(path.dirname(STATE),{recursive:true});fs.writeFileSync(STATE,JSON.stringify(st));
