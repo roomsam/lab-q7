@@ -30,6 +30,8 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           TEST_MSG: ${{ inputs.test && '1' || '0' }}
           STATE_FILE: .notify/load.json
+          TG_LOG_URL: ${{ secrets.TG_LOG_URL }}
+          TG_LOG_TOKEN: ${{ secrets.TG_LOG_TOKEN }}
       - uses: actions/cache/save@v4
         if: always()
         with:
