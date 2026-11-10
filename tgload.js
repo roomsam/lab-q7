@@ -52,8 +52,8 @@ const SESSN=["πριν την Ασία","άνοιγμα Ασίας","Ασία","
 const sessOf=t=>{const h=new Date(t+3e5).getUTCHours();return h>=22?0:h<2?1:h<7?2:h<12?3:h<16?4:5};
 function scoreOf(e){
   if(e.type==="watch"){const i=sessOf(e.t);
-    if(e.k==="load"){const h=HIST.long[i];return `η κίνηση ήρθε ${h[0]}% (τυχαία ${h[1]}%) · ${SESSN[i]}`}
-    if(e.k==="liq"){const h=HIST.short[i];return `η κίνηση ήρθε ${h[0]}% (τυχαία ${h[1]}%) · ${SESSN[i]}`}
+    if(e.k==="load"){const h=HIST.long[i];return `ιστορική έρευνα BTC 2021–26 · +0,5% πριν −0,5% σε 4ω: ${h[0]}% με φόρτωμα / ${h[1]}% σε τυχαίες στιγμές · ${SESSN[i]}`}
+    if(e.k==="liq"){const h=HIST.short[i];return `ιστορική έρευνα BTC 2021–26 · −0,5% πριν +0,5% σε 4ω: ${h[0]}% με φόρτωμα / ${h[1]}% σε τυχαίες στιγμές · ${SESSN[i]}`}
     if(e.k==="trap")return "η πτώση συνεχίστηκε μόνο 6–20% (τυχαία 40–46%)";
     if(e.k==="xfer")return "δεν έχει μετρηθεί· παρόμοιο μοτίβο 2025–26: άνοδος 48–51% (τυχαία 42%), πριν το 2025 δεν στεκόταν";
     if(e.k==="dist")return "δεν έχει μετρηθεί· παρόμοιο μοτίβο 2025–26: πτώση 51–56% (τυχαία 42–44%)"}

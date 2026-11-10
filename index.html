@@ -76,7 +76,7 @@ table.ldTb tr.ldSep td{position:static;background:#0a0f1a;color:#9fb0c9;font:700
 <header><div class="logo">Trading<b>Gym</b> · Πρόβλεψη</div><select id="sym" class="btn"></select><div id="tabs" style="display:flex;gap:6px"></div><div class="btn" id="cd">⏱ —</div><div class="badge" id="badge">ΠΕΙΡΑΜΑΤΙΚΟ · σε σκιώδη έλεγχο</div></header>
 <div class="sm mut" id="status" style="margin:-6px 0 12px">—</div>
 <div id="notes"></div>
-<div class="card" id="ldCard"><div class="ldTop"><div class="ldTitle">⚡ Φόρτωμα <b>αγοράς</b></div><span class="ldLive"><i></i>ΖΩΝΤΑΝΟ 5′ <span id="ldAt"></span></span><span class="ldVer">v3.1 · 10/11</span></div>
+<div class="card" id="ldCard"><div class="ldTop"><div class="ldTitle">⚡ Φόρτωμα <b>αγοράς</b></div><span class="ldLive"><i></i>ΖΩΝΤΑΝΟ 5′ <span id="ldAt"></span></span><span class="ldVer">v3.2 · 10/11</span></div>
 <div id="ldV" class="sm">Φόρτωση…</div>
 <div id="ldK"></div>
 <div id="ldS"></div>
@@ -86,6 +86,7 @@ table.ldTb tr.ldSep td{position:static;background:#0a0f1a;color:#9fb0c9;font:700
 <div class="scroll" id="ldT" style="max-height:640px;overflow-y:auto"></div>
 <details style="margin-top:8px"><summary class="sm" style="cursor:pointer;color:var(--mut)">Ημερολόγιο (σε αυτή τη συσκευή) · τι είπε και τι έκανε το BTC μετά</summary><div id="ldL" style="margin-top:8px"></div></details>
 <p class="sm mut" style="margin:8px 0 0">⏸ απορρόφηση: πωλητές/ρευστοποιήσεις που δεν ρίχνουν την τιμή ενώ το OI κρατάει, ή μεγάλοι ▲ με λιανική ▼ σε σταθερό OI (μεταφορά θέσεων). Ρευστοποιήσεις = δείγμα Binance, μόνο όσο η σελίδα είναι ανοιχτή. 🟡 φόρτωμα → παρακολούθηση · 🎯 είσοδος μετά από σκούπισμα της άκρης και επιστροφή με νέο OI (η άκρη του fake = αναφορά stop) · 🔴 εξασθένηση: νέα άκρα ενώ το OI φεύγει · ❌ τέλος: χάθηκε το ενδιαφέρον ή ρευστοποίηση στην άλλη πλευρά. Ξεχωριστό στρώμα από το μοντέλο 4H, δεν το αλλάζει. Μετρημένο 2021–26 σε 22 crypto· η απορρόφηση σημειώνεται ως ασθενέστερη. <span id="ldErr" class="wa"></span></p></div>
+<div class="card tgx" id="smCard"></div>
 <div class="card tgx" id="opCard"></div>
 <div class="card tgx" id="whCard"></div>
 <div class="grid"><div>
@@ -396,7 +397,7 @@ async function start(){const T=$("tabs");T.innerHTML="";for(const tf in TFS){con
   await refresh(cur);for(const tf of Object.keys(TFS))if(tf!==cur&&!CACHE[tf])await refresh(tf);}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&MODELS&&CACHE[cur]&&Date.now()>CACHE[cur].latest+2*TFS[cur].ms+20000)refresh(cur)});
 </script>
-<script src="tgload.js?v=26"></script>
+<script src="tgload.js?v=27"></script>
 <script>
 // ===== ⚡ Φόρτωμα αγοράς v2 · ζωντανό ανά 5′ · ξαναπαίζει τις τελευταίες 8ω σε κάθε ανανέωση =====
 (function(){
@@ -463,7 +464,7 @@ function render(D,out,at){
   el("ldV").className="";el("ldV").innerHTML=hero;
   // --- συνεδρία ---
   const si=sessIdx(at);const nx=nextOpen(at);const mins=Math.round((nx[0]-at)/6e4);const hl=HIST.long[si],hs=HIST.short[si];
-  el("ldS").className="ldSess";el("ldS").innerHTML=`<div><span class="t">Συνεδρία</span><b>${SESS[si][2]}</b></div><div><span class="t">Επόμενο άνοιγμα</span><b>${nx[1]}</b> <span class="wa">σε ${mins>=60?Math.floor(mins/60)+"ω "+(mins%60)+"′":mins+"′"}</span></div><div class="hist"><span class="t">Ιστορικά εδώ η κίνηση ήρθε</span>long <b>${hl[0]}%</b> με φόρτωμα / ${hl[1]}% χωρίς · short <b>${hs[0]}%</b> / ${hs[1]}%</div>`;
+  el("ldS").className="ldSess";el("ldS").innerHTML=`<div><span class="t">Συνεδρία</span><b>${SESS[si][2]}</b></div><div><span class="t">Επόμενο άνοιγμα</span><b>${nx[1]}</b> <span class="wa">σε ${mins>=60?Math.floor(mins/60)+"ω "+(mins%60)+"′":mins+"′"}</span></div><div class="hist"><span class="t">Ιστορική έρευνα · BTC 2021–26 · ±0,5% πρώτο σε 4ω</span>long <b>${hl[0]}%</b> με φόρτωμα / ${hl[1]}% σε τυχαίες στιγμές · short <b>${hs[0]}%</b> / ${hs[1]}%</div>`;
   // --- ακολουθία ---
   const last12=ev.filter(e=>at-e.t<=12*36e5);
   el("ldSeq").innerHTML=last12.length?last12.slice(-14).reverse().map(e=>{let sub="";
@@ -498,4 +499,5 @@ function boot(){const app=document.getElementById("app");if(!app||app.style.disp
 boot();
 })();
 </script>
-<script src="tgopen.js?v=31"></script></body></html>
+<script src="tgsum.js?v=1"></script>
+<script src="tgopen.js?v=32"></script></body></html>
