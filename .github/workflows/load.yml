@@ -32,6 +32,12 @@ jobs:
           STATE_FILE: .notify/load.json
           TG_LOG_URL: ${{ secrets.TG_LOG_URL }}
           TG_LOG_TOKEN: ${{ secrets.TG_LOG_TOKEN }}
+      - run: node notify/model4h.js
+        if: always()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          TG_MODEL_KEY: ${{ secrets.TG_MODEL_KEY }}
+          STATE_FILE: .notify/model4h.json
       - uses: actions/cache/save@v4
         if: always()
         with:
