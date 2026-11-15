@@ -180,8 +180,51 @@ function shadowPart(){
   <p class="sm mut">Το «φόβος» γράφεται τη στιγμή του σήματος και μένει αποθηκευμένο σε αυτή τη συσκευή. Τα σήματα δεν αλλάζουν: μετράμε αν οι πωλήσεις σε φόβο χάνουν, πριν γίνει κανόνας. ${nodata?nodata+" σήματα χωρίς δεδομένα (παλιότερα από 30 μέρες ή κενό στη Binance).":""} Λίγα δείγματα ανά ομάδα → κανένα συμπέρασμα πριν από ~30 ανά ομάδα.</p>
   ${comparePart(C)}
   ${rulesPart(C)}
+  ${euroPart(C)}
   ${mPart(C)}
   ${todoPart()}`;
+}
+
+// ---------- Λογαριασμός σε ευρώ: 1.000 € × 5, μοιρασμένα, με επανεπένδυση (μόνο μέτρηση) ----------
+// Κάθε θέση = (τρέχον κεφάλαιο × 5) ÷ θέσεις. Συνολική αξία ανοιχτών ≤ κεφάλαιο × 5 (αλλιώς το σήμα χάνεται).
+// Είσοδος στο κλείσιμο του κεριού σήματος, έξοδος όταν κλείνει το σήμα. Κόστος 8 bp στην αξία θέσης.
+const CAP0=1000,LEV=5,FROM16=Date.parse("2026-11-15T22:00:00Z"); // Δευ 16/11 00:00 Ελλάδας
+function btcEma(T,n){if(!D||!D.px)return NaN;const k=2/(n+1);let e=NaN,c=0;for(const x of D.px){if(x[0]>T)break;e=c?x[1]*k+e*(1-k):x[1];c++}return c>=n?e:NaN}
+function btcUp(T){const e=btcEma(T,50),p=at(D.px,T);return p&&fin(e)?p[1]>e:null}
+function euroSim(X,o){
+  // o: {slots, w(h)→βάρος, cap ανά κατεύθυνση, from}
+  const L=X.filter(h=>h.o&&fin(h.o.r)&&fin(h.o.n)&&h.t>=(o.from||0)).map(h=>({h,op:h.t+H4,cl:h.t+(h.o.n+1)*H4,conf:Math.max(h.p,1-h.p)}))
+    .sort((a,b)=>a.op-b.op||b.conf-a.conf);
+  let eq=CAP0,peak=CAP0,dd=0,taken=0,skip=0;const open=[];
+  const settle=T=>{open.sort((a,b)=>a.cl-b.cl);while(open.length&&open[0].cl<=T){const x=open.shift();eq+=x.not*(x.h.sig*x.h.o.r)-x.not*FEE/1e4;peak=Math.max(peak,eq);dd=Math.max(dd,peak-eq)}};
+  for(const x of L){
+    settle(x.op);
+    const w=o.w?o.w(x.h):1;if(!w){continue}
+    const not=eq*LEV/o.slots*w,used=open.reduce((s,y)=>s+y.not,0);
+    const same=open.filter(y=>y.h.sig===x.h.sig).length;
+    if(eq<=0||used+not>eq*LEV+1e-9||(o.cap&&same>=o.cap)){skip++;continue}
+    open.push({h:x.h,cl:x.cl,not});taken++;
+  }
+  settle(Infinity);
+  return{eq,taken,skip,dd};
+}
+function euroPart(C){
+  const X=C.hist,first=X.filter(h=>h.first);
+  const up=h=>{const u=btcUp(h.t+H4);return u===null?1:(h.sig<0||u)?1:0};
+  const V=[
+    ["Α · όπως τώρα","όλα τα σήματα (κανόνας β) · 31 θέσεις",X,{slots:31}],
+    ["α · μόνο πρώτο σήμα","χωρίς επαναλήψεις",first,{slots:31}],
+    ["Ι · μόνο πωλήσεις","καμία αγορά",X.filter(h=>h.sig<0),{slots:31}],
+    ["Κ · αγορά μόνο σε άνοδο BTC","αγορές μόνο αν BTC πάνω από EMA50 4H· πωλήσεις όλες",X,{slots:31,w:up}],
+    ["Λ · διπλό στα ≥70%","σιγουριά ≥70% → διπλή θέση",X,{slots:31,w:h=>Math.max(h.p,1-h.p)>=0.70?2:1}],
+    ["Μ · έως 10 ανά κατεύθυνση","μεγαλύτερες θέσεις (÷20), προτίμηση στα πιο σίγουρα",X,{slots:20,cap:10}],
+    ["Ω · Κ + Λ + Μ","όλες οι βελτιώσεις μαζί",X,{slots:20,cap:10,w:h=>up(h)?(Math.max(h.p,1-h.p)>=0.70?2:1):0}]];
+  const eur=v=>(v>=0?"+":"−")+Math.abs(Math.round(v)).toLocaleString("el-GR")+" €";
+  const rows=V.map(([lab,note,L,o])=>{const a=euroSim(L,o),b=euroSim(L,Object.assign({},o,{from:FROM16}));
+    return `<tr><td>${lab}<br><span class="sm mut">${note}</span></td><td><b>${Math.round(a.eq).toLocaleString("el-GR")} €</b></td><td class="${a.eq>=CAP0?"up":"dn"}">${eur(a.eq-CAP0)}</td><td class="dn">${a.dd?"−"+Math.round(a.dd).toLocaleString("el-GR")+" €":"0 €"}</td><td>${a.taken}${a.skip?` <span class="mut">(χάθηκαν ${a.skip})</span>`:""}</td><td class="${b.eq>=CAP0?"up":"dn"}">${b.taken?eur(b.eq-CAP0):"—"}</td></tr>`}).join("");
+  return `<div class="h" style="margin-top:12px">Λογαριασμός 1.000 € × 5 · μοιρασμένα · με επανεπένδυση</div>
+  <div class="scroll"><table><tr><th>Παραλλαγή</th><th>Σήμερα</th><th>Κέρδος</th><th>Χειρότερη βουτιά</th><th>Trades</th><th>Από 16/11 (τεστ)</th></tr>${rows}</table></div>
+  <p class="sm mut">Από 31/10. <b>Προσοχή:</b> οι Ι, Κ, Λ, Μ, Ω διαλέχτηκαν κοιτώντας αυτές τις ίδιες 15 μέρες, οπότε εδώ φαίνονται καλύτερες απ' ό,τι είναι. Πραγματικό τεστ είναι μόνο η στήλη «Από 16/11» (νέος λογαριασμός 1.000 € από Δευτέρα). Λείπουν funding και ολίσθηση. Κανένα σήμα δεν αλλάζει· μόνο μέτρηση.</p>`;
 }
 
 // ---------- 4H+M: αγορές / πωλήσεις + συνδυασμός «πωλήσεις 4H + αγορές 4H+M» (ιδέα 15/11, μόνο μέτρηση) ----------
@@ -229,6 +272,7 @@ function todoPart(){
   <li>Βαθμονόμηση: σωστή· τα ≥70% ~2× bp → πιθανό μεγαλύτερο μέγεθος, όχι φίλτρο.</li>
   <li>4H+M: −33.671 bp σε 287 μέχρι 15/11 → πάντα long ή ανάποδο; Συνδυασμός Η/Θ.</li>
   <li>Το 4H νικάει την τάση; «Βάση» 70% έναντι 65% του μοντέλου.</li>
+  <li>Λογαριασμός σε ευρώ: κρίνεται μόνο η στήλη «Από 16/11».</li>
   </ul>`;
 }
 
