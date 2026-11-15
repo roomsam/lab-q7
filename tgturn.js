@@ -144,7 +144,7 @@ function rulesPart(C){
     let sd=sg>0?c0-lo+0.1*a:hi-c0+0.1*a;sd=Math.min(2*a,Math.max(0.5*a,sd));zs.push(sd/a);
     const rZ=sim(b,i,sg,c0,sd,sd,1);
     if(rE==null||rZ==null)continue;
-    R.A.push(base);R.E.push(sg*rE*1e4);R.Z.push(sg*rZ*1e4);
+    R.A.push(base);R.E.push(rE*1e4);R.Z.push(rZ*1e4);
     const conf=Math.max(h.p,1-h.p),bk=conf>=0.75?"≥75%":conf>=0.70?"70–75%":"65–70%";
     (cal[bk]=cal[bk]||[]).push({bp:base,p:conf});
   }
