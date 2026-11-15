@@ -179,7 +179,57 @@ function shadowPart(){
   ${row("Πωλήσεις <b>με</b> φόβο πλήθους",g(-1,1))}${row("Πωλήσεις χωρίς φόβο",g(-1,0))}${row("Αγορές <b>με</b> φόβο πλήθους",g(1,1))}${row("Αγορές χωρίς φόβο",g(1,0))}</table></div>
   <p class="sm mut">Το «φόβος» γράφεται τη στιγμή του σήματος και μένει αποθηκευμένο σε αυτή τη συσκευή. Τα σήματα δεν αλλάζουν: μετράμε αν οι πωλήσεις σε φόβο χάνουν, πριν γίνει κανόνας. ${nodata?nodata+" σήματα χωρίς δεδομένα (παλιότερα από 30 μέρες ή κενό στη Binance).":""} Λίγα δείγματα ανά ομάδα → κανένα συμπέρασμα πριν από ~30 ανά ομάδα.</p>
   ${comparePart(C)}
-  ${rulesPart(C)}`;
+  ${rulesPart(C)}
+  ${mPart(C)}
+  ${todoPart()}`;
+}
+
+// ---------- 4H+M: αγορές / πωλήσεις + συνδυασμός «πωλήσεις 4H + αγορές 4H+M» (ιδέα 15/11, μόνο μέτρηση) ----------
+const FROM15=Date.parse("2026-11-14T22:00:00Z"); // Κυρ 15/11 00:00 Ελλάδας
+function mPart(C4){
+  const CM=(typeof CACHE!=="undefined")&&CACHE["4hm"];
+  const head=`<div class="h" style="margin-top:12px">4H+M · αγορές / πωλήσεις και συνδυασμός με το 4H</div>`;
+  if(!CM||!CM.hist)return head+`<p class="sm mut">Άνοιξε μία φορά το <b>4H+M</b> (και μετά ξανά το 4H) για να φορτωθεί αυτή η μέτρηση.</p>`;
+  let changed=false;
+  for(const h of CM.hist){const key="m|"+h.s+"|"+h.t;if(FL[key])continue;const st=state(h.t+H4);if(!st.ok)continue;FL[key]={f:st.anyFear?1:0,c:st.anyCrowd?1:0};changed=true}
+  if(changed)saveFL();
+  const M=CM.hist.filter(h=>h.o&&fin(h.o.r)),F4=C4.hist.filter(h=>h.o&&fin(h.o.r));
+  const fearM=h=>{const f=FL["m|"+h.s+"|"+h.t];return f?f.f===1:null};
+  const mB=M.filter(h=>h.sig>0),mS=M.filter(h=>h.sig<0),new15=X=>X.filter(h=>h.t>=FROM15);
+  const all=CM.hist.length,allB=CM.hist.filter(h=>h.sig>0).length;
+  const row=(lab,X,note)=>{const T=stats(X);return `<tr><td>${lab}${note?`<br><span class="sm mut">${note}</span>`:""}</td><td>${T.n}</td><td>${T.n?Math.round(T.win*100)+"%":"—"}</td><td class="${T.n&&T.avg>=0?"up":"dn"}">${T.n?f2(T.avg,1)+" bp":"—"}</td><td class="${T.n&&T.net>=0?"up":"dn"}">${T.n?Math.round(T.net)+" bp":"—"}</td></tr>`};
+  // συνδυασμοί (κανόνας β: κάθε σήμα = θέση)
+  const s4=F4.filter(h=>h.sig<0),b4=F4.filter(h=>h.sig>0);
+  const mBf=mB.filter(h=>fearM(h)===true);
+  // αντικρουόμενα: αγορά 4H+M ενώ είναι ανοιχτή πώληση 4H στο ίδιο σύμβολο (στην πράξη αλληλοαναιρούνται)
+  let conf=0;for(const m of mB){if(F4.some(h=>h.sig<0&&h.s===m.s&&m.t>=h.t&&m.t<h.t+h.o.n*H4))conf++}
+  const th=`<tr><th>Ομάδα</th><th>Ολοκλ.</th><th>Επιτυχία</th><th>Μέσο / σήμα</th><th>Καθαρό (−${FEE} bp)</th></tr>`;
+  return head+`<p class="sm">Σύνολο σημάτων 4H+M: <b>${all}</b> · αγορές <b>${allB}</b> (${all?Math.round(allB/all*100):0}%) · πωλήσεις <b>${all-allB}</b></p>
+  <div class="scroll"><table>${th}
+  ${row("Αγορές 4H+M · όλες",mB)}${row("Πωλήσεις 4H+M · όλες",mS)}
+  ${row("Αγορές 4H+M · από 15/11",new15(mB),"μετά το γύρισμα")}${row("Πωλήσεις 4H+M · από 15/11",new15(mS))}
+  ${row("Αγορές 4H+M <b>με</b> φόβο πλήθους",mBf)}${row("Αγορές 4H+M χωρίς φόβο",mB.filter(h=>fearM(h)===false))}</table></div>
+  <div class="h" style="margin-top:12px">Συνδυασμός · μέτρηση έως 30/11</div>
+  <div class="scroll"><table>${th}
+  ${row("Α · 4H όπως τώρα",F4,"πωλήσεις + αγορές 4H")}
+  ${row("Ι · μόνο πωλήσεις 4H",s4,"καμία αγορά")}
+  ${row("Η · πωλήσεις 4H + αγορές 4H+M",s4.concat(mB),"η ιδέα: κάθε μοντέλο στο δυνατό του")}
+  ${row("Θ · πωλήσεις 4H + αγορές 4H+M μόνο σε φόβο",s4.concat(mBf),"αγορά μόνο όταν η κάρτα δείχνει γύρισμα")}
+  ${row("Από 15/11 · Η",new15(s4).concat(new15(mB)),"ίδια με Η, μόνο μετά το γύρισμα")}</table></div>
+  <p class="sm mut">Αντικρουόμενα στην Η: ${conf} αγορές 4H+M άνοιξαν ενώ ήταν ανοιχτή πώληση 4H στο ίδιο σύμβολο (στην πράξη αλληλοαναιρούνται, εδώ μετριούνται και οι δύο). Κανένα σήμα δεν αλλάζει· μόνο μέτρηση.</p>`;
+}
+function todoPart(){
+  return `<div class="h" style="margin-top:12px">Κρίνεται στις 30/11 · ευρήματα 15/11</div>
+  <ul class="sm" style="margin:6px 0 0;padding-left:18px">
+  <li>Αγορές 4H: 1 στις 31 μέχρι 15/11 → κρατάμε ή κόβουμε τα long;</li>
+  <li>Φίλτρο φόβου (Β/Δ): μέχρι τώρα χειρότερο από το Α.</li>
+  <li>Κούραση (Γ): +1,4 bp/σήμα = θόρυβος μέχρι τώρα.</li>
+  <li>Επαναλήψεις (κανόνας β): 78% / +74 bp έναντι 55% / +28 bp στα πρώτα σήματα.</li>
+  <li>Είσοδος (Ε) και stop 1 ATR: εντάξει, δεν αλλάζουν.</li>
+  <li>Βαθμονόμηση: σωστή· τα ≥70% ~2× bp → πιθανό μεγαλύτερο μέγεθος, όχι φίλτρο.</li>
+  <li>4H+M: −33.671 bp σε 287 μέχρι 15/11 → πάντα long ή ανάποδο; Συνδυασμός Η/Θ.</li>
+  <li>Το 4H νικάει την τάση; «Βάση» 70% έναντι 65% του μοντέλου.</li>
+  </ul>`;
 }
 
 function render(){
@@ -207,7 +257,7 @@ async function refresh(){
   busy=false;render();
 }
 function loop(){
-  const C=(typeof CACHE!=="undefined")&&CACHE["4h"];const n=C&&C.hist?C.hist.length:0;
+  const C=(typeof CACHE!=="undefined")&&CACHE["4h"],CM=(typeof CACHE!=="undefined")&&CACHE["4hm"];const n=(C&&C.hist?C.hist.length:0)*1e5+(CM&&CM.hist?CM.hist.length:0);
   if(!$("turn")&&$("shadow"))render();
   if(D&&n!==lastN){lastN=n;render()}
   if(Date.now()-DAT>5*60e3)refresh();
