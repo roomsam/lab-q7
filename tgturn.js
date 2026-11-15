@@ -122,6 +122,44 @@ function comparePart(C){
   ${row("Δ · φίλτρο + κούραση",filt,"run","Β και Γ μαζί")}</table></div>
   <p class="sm mut">Πώς έκλεισε η Γ: ${Object.entries(how).map(([k,v])=>k+" "+v).join(" · ")||"—"}. Μετράει μόνο κλειστά σήματα, από τα κεριά 4H της σελίδας (όπου στο ίδιο κερί χτυπάνε και στόχος και stop, μετράει stop). Η απόφαση στις 30/11 με βάση το «Καθαρό».</p>`;
 }
+
+// ---------- Έλεγχος κανόνων εισόδου/εξόδου (μόνο μέτρηση) ----------
+// Γενική προσομοίωση: είσοδος e, stop/στόχος σε απόσταση sd/td, έλεγχος κεριών από j0 έως i+6, ίδιο κερί → stop, λήξη στο κλείσιμο του 6ου.
+function sim(b,i,sg,e,sd,td,j0){
+  for(let j=j0;j<=BASEN;j++){const k=i+j;if(k>=b.t.length)return null;
+    const adv=sg>0?b.l[k]<=e-sd:b.h[k]>=e+sd,fav=sg>0?b.h[k]>=e+td:b.l[k]<=e-td;
+    if(adv)return -sd/e;if(fav)return td/e;}
+  const k=i+BASEN;if(k>=b.t.length)return null;return sg*Math.log(b.c[k]/e);
+}
+function rulesPart(C){
+  const R={A:[],E:[],Z:[]},cal={};let zs=[];
+  for(const h of C.hist){
+    if(!h.o||!fin(h.o.r))continue;const A=C.all&&C.all[h.s];if(!A)continue;const i=A.idx.get(h.t);if(i==null)continue;
+    const b=A.b,a=h.atr,sg=h.sig,c0=h.c;if(!fin(a)||a<=0)continue;
+    const base=sg*h.o.r*1e4;
+    // Ε: είσοδος στο άνοιγμα του επόμενου κεριού (όπως οι ειδοποιήσεις), ίδιες αποστάσεις 1 ATR
+    let rE=null;if(b.o&&i+1<b.t.length&&fin(b.o[i+1]))rE=sim(b,i,sg,b.o[i+1],a,a,1);
+    // Ζ: stop πίσω από το swing των 5 τελευταίων κεριών (+0,1 ATR), όριο 0,5–2 ATR, στόχος ίση απόσταση (1:1)
+    let lo=Infinity,hi=-Infinity;for(let k=Math.max(0,i-4);k<=i;k++){lo=Math.min(lo,b.l[k]);hi=Math.max(hi,b.h[k])}
+    let sd=sg>0?c0-lo+0.1*a:hi-c0+0.1*a;sd=Math.min(2*a,Math.max(0.5*a,sd));zs.push(sd/a);
+    const rZ=sim(b,i,sg,c0,sd,sd,1);
+    if(rE==null||rZ==null)continue;
+    R.A.push(base);R.E.push(sg*rE*1e4);R.Z.push(sg*rZ*1e4);
+    const conf=Math.max(h.p,1-h.p),bk=conf>=0.75?"≥75%":conf>=0.70?"70–75%":"65–70%";
+    (cal[bk]=cal[bk]||[]).push({bp:base,p:conf});
+  }
+  const st=X=>{const n=X.length;if(!n)return{n:0};let w=0,s=0;for(const x of X){s+=x;if(x>0)w++}return{n,win:w/n,avg:s/n,net:s-FEE*n}};
+  const row=(lab,X,note)=>{const T=st(X);return `<tr><td>${lab}<br><span class="sm mut">${note}</span></td><td>${T.n}</td><td>${T.n?Math.round(T.win*100)+"%":"—"}</td><td class="${T.n&&T.avg>=0?"up":"dn"}">${T.n?f2(T.avg,1)+" bp":"—"}</td><td class="${T.n&&T.net>=0?"up":"dn"}">${T.n?Math.round(T.net)+" bp":"—"}</td></tr>`};
+  const medZ=zs.length?zs.slice().sort((x,y)=>x-y)[zs.length>>1]:NaN;
+  const calRows=["65–70%","70–75%","≥75%"].map(k=>{const X=cal[k]||[];const n=X.length;const w=n?X.filter(x=>x.bp>0).length/n:NaN;const pm=n?X.reduce((s,x)=>s+x.p,0)/n:NaN;const av=n?X.reduce((s,x)=>s+x.bp,0)/n:NaN;
+    return `<tr><td>${k}</td><td>${n}</td><td>${n?Math.round(pm*100)+"%":"—"}</td><td>${n?Math.round(w*100)+"%":"—"}</td><td class="${n&&av>=0?"up":"dn"}">${n?f2(av,1)+" bp":"—"}</td></tr>`}).join("");
+  return `<div class="h" style="margin-top:12px">Έλεγχος κανόνων · ίδια σήματα 4H</div>
+  <div class="scroll"><table><tr><th>Κανόνας</th><th>Ολοκλ.</th><th>Επιτυχία</th><th>Μέσο / σήμα</th><th>Καθαρό (−${FEE} bp)</th></tr>
+  ${row("Α · όπως τώρα",R.A,"είσοδος στο κλείσιμο · stop/στόχος 1 ATR")}${row("Ε · είσοδος στο επόμενο άνοιγμα",R.E,"όπως εκτελείς από την ειδοποίηση")}${row("Ζ · stop πίσω από το swing",R.Z,`χαμηλό/ψηλό 5 κεριών +0,1 ATR · στόχος ίση απόσταση · διάμεσο stop ${f2(medZ,2)} ATR`)}</table></div>
+  <div class="h" style="margin-top:12px">Βαθμονόμηση · λέει 65% και πιάνει 65%;</div>
+  <div class="scroll"><table><tr><th>Σιγουριά μοντέλου</th><th>Σήματα</th><th>Μέση πιθ.</th><th>Πραγματική επιτυχία</th><th>Μέσο / σήμα</th></tr>${calRows}</table></div>
+  <p class="sm mut">Επαναλήψεις: δες τον πίνακα «α · μία θέση ανά σύμβολο» / «β · προσθήκη θέσης» στον Σκιώδη λογαριασμό. «Επιτυχία» = σήματα με θετικό αποτέλεσμα (μαζί με τις λήξεις σε κέρδος).</p>`;
+}
 function shadowPart(){
   const C=(typeof CACHE!=="undefined")&&CACHE["4h"];
   if(!C||!C.hist)return `<p class="sm mut">Η σκιώδης μέτρηση εμφανίζεται όταν φορτωθεί το 4H (άνοιξε μία φορά το 4H).</p>`;
@@ -140,7 +178,8 @@ function shadowPart(){
   <div class="scroll"><table><tr><th>Ομάδα (κανόνας β)</th><th>Ολοκλ.</th><th>Επιτυχία</th><th>Μέσο / σήμα</th><th>Καθαρό (−${FEE} bp)</th></tr>
   ${row("Πωλήσεις <b>με</b> φόβο πλήθους",g(-1,1))}${row("Πωλήσεις χωρίς φόβο",g(-1,0))}${row("Αγορές <b>με</b> φόβο πλήθους",g(1,1))}${row("Αγορές χωρίς φόβο",g(1,0))}</table></div>
   <p class="sm mut">Το «φόβος» γράφεται τη στιγμή του σήματος και μένει αποθηκευμένο σε αυτή τη συσκευή. Τα σήματα δεν αλλάζουν: μετράμε αν οι πωλήσεις σε φόβο χάνουν, πριν γίνει κανόνας. ${nodata?nodata+" σήματα χωρίς δεδομένα (παλιότερα από 30 μέρες ή κενό στη Binance).":""} Λίγα δείγματα ανά ομάδα → κανένα συμπέρασμα πριν από ~30 ανά ομάδα.</p>
-  ${comparePart(C)}`;
+  ${comparePart(C)}
+  ${rulesPart(C)}`;
 }
 
 function render(){
