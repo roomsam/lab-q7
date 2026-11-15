@@ -17,6 +17,10 @@ const pc=v=>fin(v)?(v>=0?"+":"−")+Math.abs(v*100).toFixed(1).replace(".",",")+
 const LSK="tgturn_flags_v1";
 let FL={};try{FL=JSON.parse(localStorage.getItem(LSK)||"{}")}catch(e){FL={}}
 const saveFL=()=>{try{localStorage.setItem(LSK,JSON.stringify(FL))}catch(e){}};
+const RSK="tgturn_run_v1";
+let RN={};try{RN=JSON.parse(localStorage.getItem(RSK)||"{}")}catch(e){RN={}}
+const saveRN=()=>{try{localStorage.setItem(RSK,JSON.stringify(RN))}catch(e){}};
+const MAXN=12,BASEN=6; // έξοδος σε κούραση: έως 12 κεριά 4H· αν δεν πιάσει 1R μέσα σε 6, κλείνει όπως τώρα
 let D=null,DAT=0,busy=false,err=null,lastN=-1;
 
 async function load(){
@@ -68,6 +72,56 @@ function stats(X){
   let w=0,s=0;for(const h of X){const bp=h.sig*h.o.r*1e4;s+=bp;if(bp>0)w++}
   return{n,win:w/n,avg:s/n,net:s-FEE*n};
 }
+
+// Σκιώδης έξοδος «μισό στο 1R + το υπόλοιπο τρέχει μέχρι κούραση». Μόνο μέτρηση· δεν αλλάζει σήματα/εξόδους της σελίδας.
+// Φάση 1: stop −1 ATR / στόχος +1 ATR (αν χτυπηθούν και τα δύο στο ίδιο κερί → stop, όπως η σελίδα). Χωρίς 1R μέσα σε 6 κεριά → κλείσιμο όπως τώρα.
+// Φάση 2 (μισό έκλεισε στο +1R): stop στην είσοδο· έξοδος στο κλείσιμο κεριού όταν (α) η τιμή γυρίσει 1 ATR από το καλύτερο κλείσιμο,
+// (β) σε πωλήσεις: εμφανιστεί «φόβος πλήθους», (γ) φτάσει 12 κεριά.
+function runner(h,A){
+  const i=A.idx.get(h.t);if(i==null)return null;const b=A.b,c0=h.c,a=h.atr,sg=h.sig;
+  if(!fin(c0)||!fin(a)||a<=0)return null;
+  const stop=c0-sg*a,tp=c0+sg*a;let ph=1,best=tp;
+  for(let j=1;j<=MAXN;j++){
+    const k=i+j;if(k>=b.t.length)return null;
+    const hi=b.h[k],lo=b.l[k],cl=b.c[k],T=b.t[k]+H4;
+    if(ph===1){
+      const adv=sg>0?lo<=stop:hi>=stop,fav=sg>0?hi>=tp:lo<=tp;
+      if(adv)return{r:-a/c0,how:"stop",n:j};
+      if(fav){ph=2;best=sg>0?Math.max(tp,cl):Math.min(tp,cl);continue}
+      if(j===BASEN)return{r:sg*Math.log(cl/c0),how:"λήξη",n:j};
+      continue;
+    }
+    const be=sg>0?lo<=c0:hi>=c0;
+    if(be)return{r:0.5*a/c0,how:"1R+είσοδος",n:j};
+    best=sg>0?Math.max(best,cl):Math.min(best,cl);
+    const run=sg*Math.log(cl/c0);
+    if(sg*(best-cl)>=a)return{r:0.5*a/c0+0.5*run,how:"γύρισε 1 ATR",n:j};
+    if(sg<0&&D){const st=state(T);if(st.anyFear)return{r:0.5*a/c0+0.5*run,how:"φόβος πλήθους",n:j}}
+    if(j===MAXN)return{r:0.5*a/c0+0.5*run,how:"12 κεριά",n:j};
+  }
+  return null;
+}
+function comparePart(C){
+  const rows=[];let changed=false;
+  for(const h of C.hist){
+    const key=h.s+"|"+h.t,f=FL[key];if(!f||!h.o||!fin(h.o.r))continue;
+    let rr=RN[key];
+    if(!rr){const A=C.all&&C.all[h.s];if(!A)continue;const x=runner(h,A);if(!x)continue;rr=RN[key]={r:x.r,how:x.how,n:x.n};changed=true}
+    rows.push({sig:h.sig,f:f.f,base:h.sig*h.o.r*1e4,run:rr.r*1e4});
+  }
+  if(changed)saveRN();
+  const st=(X,k)=>{const n=X.length;if(!n)return{n:0};let w=0,s=0;for(const x of X){s+=x[k];if(x[k]>0)w++}return{n,win:w/n,avg:s/n,net:s-FEE*n}};
+  const filt=rows.filter(x=>!(x.sig<0&&x.f===1));
+  const row=(lab,X,k,note)=>{const T=st(X,k);return `<tr><td>${lab}<br><span class="sm mut">${note}</span></td><td>${T.n}</td><td>${T.n?Math.round(T.win*100)+"%":"—"}</td><td class="${T.n&&T.avg>=0?"up":"dn"}">${T.n?f2(T.avg,1)+" bp":"—"}</td><td class="${T.n&&T.net>=0?"up":"dn"}">${T.n?Math.round(T.net)+" bp":"—"}</td></tr>`};
+  const how={};for(const k in RN){const v=RN[k];how[v.how]=(how[v.how]||0)+1}
+  return `<div class="h" style="margin-top:12px">Σύγκριση αλλαγών · ίδια σήματα 4H · μέτρηση έως 30/11</div>
+  <div class="scroll"><table><tr><th>Παραλλαγή</th><th>Ολοκλ.</th><th>Επιτυχία</th><th>Μέσο / σήμα</th><th>Καθαρό (−${FEE} bp)</th></tr>
+  ${row("Α · όπως τώρα",rows,"base","1:1 · λήξη 6 κεριά · όλα τα σήματα")}
+  ${row("Β · φίλτρο φόβου",filt,"base","όχι πωλήσεις σε φόβο πλήθους")}
+  ${row("Γ · έξοδος σε κούραση",rows,"run","μισό στο 1R, το υπόλοιπο τρέχει (έως 12 κεριά)")}
+  ${row("Δ · φίλτρο + κούραση",filt,"run","Β και Γ μαζί")}</table></div>
+  <p class="sm mut">Πώς έκλεισε η Γ: ${Object.entries(how).map(([k,v])=>k+" "+v).join(" · ")||"—"}. Μετράει μόνο κλειστά σήματα, από τα κεριά 4H της σελίδας (όπου στο ίδιο κερί χτυπάνε και στόχος και stop, μετράει stop). Η απόφαση στις 30/11 με βάση το «Καθαρό».</p>`;
+}
 function shadowPart(){
   const C=(typeof CACHE!=="undefined")&&CACHE["4h"];
   if(!C||!C.hist)return `<p class="sm mut">Η σκιώδης μέτρηση εμφανίζεται όταν φορτωθεί το 4H (άνοιξε μία φορά το 4H).</p>`;
@@ -85,7 +139,8 @@ function shadowPart(){
   return `<div class="h" style="margin-top:12px">Σκιώδης μέτρηση 4H · σήματα με / χωρίς φόβο πλήθους</div>
   <div class="scroll"><table><tr><th>Ομάδα (κανόνας β)</th><th>Ολοκλ.</th><th>Επιτυχία</th><th>Μέσο / σήμα</th><th>Καθαρό (−${FEE} bp)</th></tr>
   ${row("Πωλήσεις <b>με</b> φόβο πλήθους",g(-1,1))}${row("Πωλήσεις χωρίς φόβο",g(-1,0))}${row("Αγορές <b>με</b> φόβο πλήθους",g(1,1))}${row("Αγορές χωρίς φόβο",g(1,0))}</table></div>
-  <p class="sm mut">Το «φόβος» γράφεται τη στιγμή του σήματος και μένει αποθηκευμένο σε αυτή τη συσκευή. Τα σήματα δεν αλλάζουν: μετράμε αν οι πωλήσεις σε φόβο χάνουν, πριν γίνει κανόνας. ${nodata?nodata+" σήματα χωρίς δεδομένα (παλιότερα από 30 μέρες ή κενό στη Binance).":""} Λίγα δείγματα ανά ομάδα → κανένα συμπέρασμα πριν από ~30 ανά ομάδα.</p>`;
+  <p class="sm mut">Το «φόβος» γράφεται τη στιγμή του σήματος και μένει αποθηκευμένο σε αυτή τη συσκευή. Τα σήματα δεν αλλάζουν: μετράμε αν οι πωλήσεις σε φόβο χάνουν, πριν γίνει κανόνας. ${nodata?nodata+" σήματα χωρίς δεδομένα (παλιότερα από 30 μέρες ή κενό στη Binance).":""} Λίγα δείγματα ανά ομάδα → κανένα συμπέρασμα πριν από ~30 ανά ομάδα.</p>
+  ${comparePart(C)}`;
 }
 
 function render(){
