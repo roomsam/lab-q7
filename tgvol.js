@@ -3,9 +3,9 @@
 (function(){
 "use strict";
 const API="https://fapi.binance.com";
-const SY=["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT","DOGEUSDT","ADAUSDT","AVAXUSDT","LINKUSDT","SUIUSDT","LTCUSDT","HYPEUSDT","AAVEUSDT","BCHUSDT","DOTUSDT","NEARUSDT","PUMPUSDT","RUNEUSDT","TONUSDT","TRXUSDT","XMRUSDT","ZECUSDT","XAUUSDT","QQQUSDT","SPYUSDT"];
-const TRAD=new Set(["XAUUSDT","QQQUSDT","SPYUSDT"]);
-const NM={XAUUSDT:"Χρυσός",QQQUSDT:"Nasdaq",SPYUSDT:"S&P 500"};const nm=s=>NM[s]||s.replace("USDT","");
+const SY=["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT","DOGEUSDT","ADAUSDT","AVAXUSDT","LINKUSDT","SUIUSDT","LTCUSDT","HYPEUSDT","AAVEUSDT","BCHUSDT","DOTUSDT","NEARUSDT","PUMPUSDT","RUNEUSDT","TONUSDT","TRXUSDT","XMRUSDT","ZECUSDT","XAUUSDT","QQQUSDT","SPYUSDT","CLUSDT"];
+const TRAD=new Set(["XAUUSDT","QQQUSDT","SPYUSDT","CLUSDT"]);
+const NM={XAUUSDT:"Χρυσός",QQQUSDT:"Nasdaq",SPYUSDT:"S&P 500",CLUSDT:"Πετρέλαιο"};const nm=s=>NM[s]||s.replace("USDT","");
 const $=id=>document.getElementById(id),fin=Number.isFinite;
 const usd=v=>!fin(v)?"—":Math.abs(v)>=1e9?(v/1e9).toFixed(2)+" δισ.":Math.abs(v)>=1e6?(v/1e6).toFixed(Math.abs(v)>=1e7?0:1)+" εκ.":Math.abs(v)>=1e3?Math.round(v/1e3)+" χιλ.":Math.round(v)+"";
 const sus=v=>!fin(v)?"—":(v>0?"+":v<0?"−":"")+usd(Math.abs(v));
@@ -85,7 +85,7 @@ function render(){const el=$("vlBody");if(!el)return;prune();const now=Date.now(
     <p style="margin:10px 0 0;font-size:14px;line-height:1.45">${verdict}</p>
     ${SEC("Ανά σύμβολο · 15′")}
     <div class="scroll" style="max-height:420px;overflow-y:auto"><table class="ldTb" style="width:100%"><thead><tr><th>Σύμβολο</th><th>Όγκος</th><th>Μεγ. αγορ.</th><th>Μεγ. πωλ.</th><th>Delta</th><th>Μερίδιο</th><th>Όριο</th></tr></thead>
-    <tbody>${crRows.map(tr).join("")}<tr><td colspan="7" class="sm mut" style="padding-top:12px">Χρυσός / δείκτες — tokens του Binance, όχι ο όγκος του CME</td></tr>${trRows.map(tr).join("")}</tbody></table></div>
+    <tbody>${crRows.map(tr).join("")}<tr><td colspan="7" class="sm mut" style="padding-top:12px">Χρυσός / πετρέλαιο / δείκτες — tokens του Binance, όχι ο όγκος του CME</td></tr>${trRows.map(tr).join("")}</tbody></table></div>
     <p class="sm mut" style="margin:12px 0 0">«Όγκος» = όγκος τελευταίων 60′ έναντι του διάμεσου της ίδιας ώρας τις τελευταίες 14 μέρες (1× = κανονικό). «Μεγάλοι» = εκτελέσεις market ίδιας πλευράς μέσα σε 0,15″, πάνω από το όριο του συμβόλου (ανάλογο με τον όγκο του). «Μερίδιο» = πόσο από τον όγκο του 15λεπτου είναι μεγάλες εκτελέσεις· 🐋 όταν ≥ 15% (όριο χωρίς μέτρηση ακόμα). Η σύγκριση Coinbase/Binance βγάζει συμπέρασμα μόνο με αρκετό όγκο μεγάλων (≥ 500 χιλ. / 2 εκ. σε 15′). Οι μεγάλες εκτελέσεις μετράνε μόνο όσο είναι ανοιχτή η σελίδα · Binance: ${S.wsState} από ${tA(S.from)} · Coinbase: ${S.cbState} από ${tA(S.cbFrom)}. Ανάγνωση, όχι σήμα· δεν μπαίνει στο μοντέλο.${S.err?" · "+S.err:""}</p>`;
   const a=$("vlAt");if(a)a.textContent="· "+tA(now)}
 
