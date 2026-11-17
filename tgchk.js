@@ -3,9 +3,9 @@
 (function(){
 "use strict";
 const API="https://fapi.binance.com";
-const SY=["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT","DOGEUSDT","ADAUSDT","AVAXUSDT","LINKUSDT","SUIUSDT","LTCUSDT","HYPEUSDT","AAVEUSDT","BCHUSDT","DOTUSDT","NEARUSDT","PUMPUSDT","RUNEUSDT","TONUSDT","TRXUSDT","XMRUSDT","ZECUSDT","XAUUSDT","QQQUSDT","SPYUSDT"];
-const TRAD=new Set(["XAUUSDT","QQQUSDT","SPYUSDT"]);
-const NM={XAUUSDT:"Χρυσός",QQQUSDT:"Nasdaq",SPYUSDT:"S&P 500"};const nm=s=>NM[s]||s.replace("USDT","");
+const SY=["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT","DOGEUSDT","ADAUSDT","AVAXUSDT","LINKUSDT","SUIUSDT","LTCUSDT","HYPEUSDT","AAVEUSDT","BCHUSDT","DOTUSDT","NEARUSDT","PUMPUSDT","RUNEUSDT","TONUSDT","TRXUSDT","XMRUSDT","ZECUSDT","XAUUSDT","QQQUSDT","SPYUSDT","CLUSDT"];
+const TRAD=new Set(["XAUUSDT","QQQUSDT","SPYUSDT","CLUSDT"]);
+const NM={XAUUSDT:"Χρυσός",QQQUSDT:"Nasdaq",SPYUSDT:"S&P 500",CLUSDT:"Πετρέλαιο"};const nm=s=>NM[s]||s.replace("USDT","");
 const $=id=>document.getElementById(id),fin=Number.isFinite;
 const J=async u=>{const r=await fetch(u);if(!r.ok)throw new Error("HTTP "+r.status);return r.json()};
 const pc=v=>!fin(v)?"—":(v>0?"+":v<0?"−":"")+Math.abs(v).toFixed(Math.abs(v)>=10?1:2).replace(".",",")+"%";
