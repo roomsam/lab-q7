@@ -397,7 +397,7 @@ async function start(){const T=$("tabs");T.innerHTML="";for(const tf in TFS){con
   await refresh(cur);for(const tf of Object.keys(TFS))if(tf!==cur&&!CACHE[tf])await refresh(tf);}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&MODELS&&CACHE[cur]&&Date.now()>CACHE[cur].latest+2*TFS[cur].ms+20000)refresh(cur)});
 </script>
-<script src="tgload.js?v=27"></script>
+<script src="tgload.js?v=28"></script>
 <script>
 // ===== ⚡ Φόρτωμα αγοράς v2 · ζωντανό ανά 5′ · ξαναπαίζει τις τελευταίες 8ω σε κάθε ανανέωση =====
 (function(){
@@ -417,7 +417,7 @@ function nextOpen(now){const d=new Date(now);const c=[];
     const nyMid=Date.UTC(+p.year,+p.month-1,+p.day,0,0);const localNow=Date.UTC(+p.year,+p.month-1,+p.day,+p.hour%24,+p.minute);const off=localNow-Math.floor((now+k*864e5)/6e4)*6e4;const x=nyMid+9.5*36e5-off;if(x>now){c.push([x,"Νέα Υόρκη"]);break}}
   c.sort((a,b)=>a[0]-b[0]);return c[0]}
 // ποσοστημόρια μεγάλων/λιανικής: ωριαίο ιστορικό ~20 ημερών, ανανεώνεται κάθε ώρα
-const LSYMS=SYMS.concat(["QQQUSDT","SPYUSDT"]);const LNAME={QQQUSDT:"Nasdaq (QQQ)",SPYUSDT:"S&P 500 (SPY)"};
+const LSYMS=SYMS.concat(["QQQUSDT","SPYUSDT","CLUSDT"]);const LNAME={QQQUSDT:"Nasdaq (QQQ)",SPYUSDT:"S&P 500 (SPY)",CLUSDT:"Πετρέλαιο (WTI)"};
 let PCT={at:0,v:{}};
 async function pctRefresh(){if(Date.now()-PCT.at<36e5)return;const v={};
   await pool(LSYMS,4,async s=>{const q=`symbol=${s}&period=1h&limit=500`;const [tp,gl]=await Promise.all([j(`${API}/futures/data/topLongShortPositionRatio?${q}`).catch(()=>[]),j(`${API}/futures/data/globalLongShortAccountRatio?${q}`).catch(()=>[])]);
@@ -500,7 +500,7 @@ boot();
 })();
 </script>
 <script src="tgsum.js?v=1"></script>
-<script src="tgopen.js?v=32"></script>
-<script src="tgvol.js?v=1"></script>
-<script src="tgchk.js?v=1"></script>
+<script src="tgopen.js?v=33"></script>
+<script src="tgvol.js?v=2"></script>
+<script src="tgchk.js?v=2"></script>
 <script src="tgturn.js?v=7"></script></body></html>
