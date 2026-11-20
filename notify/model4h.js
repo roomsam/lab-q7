@@ -48,19 +48,45 @@ const hA = t => new Date(t).toLocaleString("el-GR", { timeZone: "Europe/Athens",
 function px(x) { const d = x >= 1000 ? 1 : x >= 100 ? 2 : x >= 1 ? 3 : x >= 0.1 ? 4 : 5; return x.toLocaleString("el-GR", { minimumFractionDigits: d, maximumFractionDigits: d }) }
 function message(C, M) {
   const L = C.res[C.latest], P = C.res[C.prev] || {}; const close = C.latest + MS, until = close + M.N * MS;
-  const sig = Object.values(L).filter(r => r.sig).sort((a, b) => Math.abs(b.p - .5) - Math.abs(a.p - .5)); if (!sig.length) return null;
+  const all = Object.values(L).filter(r => r.sig).sort((a, b) => Math.abs(b.p - .5) - Math.abs(a.p - .5));
+  const blk = C.block ? all.filter(r => r.sig > 0) : []; const sig = all.filter(r => !blk.includes(r)); if (!sig.length && !blk.length) return null;
   const nd = sig.filter(r => r.sig < 0).length, nu = sig.length - nd;
   let m = `📊 **Μοντέλο 4H · ισχυρά σήματα** · κλείσιμο ${tA(close)}\n`;
   m += `${nd ? `🔴 ${nd} SHORT` : ""}${nd && nu ? " · " : ""}${nu ? `🟢 ${nu} LONG` : ""} · ισχύουν έως ${tA(until)} (${M.N} κεριά)\n`;
   if (Math.max(nd, nu) >= MARKET_N) m += `⚠️ ${Math.max(nd, nu)} σύμβολα στην ίδια πλευρά = κυρίως **ένα κοινό σήμα αγοράς**, όχι ${Math.max(nd, nu)} ανεξάρτητα.\n`;
-  m += "```\n";
+  if (sig.length) m += "```\n";
   for (const r of sig) { const pr = P[r.s], cont = pr && pr.sig === r.sig; const tp = r.c + r.sig * M.k * r.atr, sl = r.c - r.sig * M.k * r.atr;
     m += `${r.s.replace("USDT", "").padEnd(5)} ${r.sig > 0 ? "↑" : "↓"} ${r.p.toFixed(2).replace(".", ",")}  ${px(r.c)} → ${px(tp)} / στοπ ${px(sl)}${cont ? "  (συνεχίζει από " + hA(C.prev + MS) + ")" : "  νέο"}\n` }
-  m += "```";
+  if (sig.length) m += "```";
+  if (blk.length) m += `\n⛔ Μπλοκαρισμένα LONG (διόρθωση #1 · πτωτική τάση BTC + πλήθος φορτωμένο long, χωρίς ξεφόρτωμα OI): ${blk.map(r => r.s.replace("USDT", "")).join(", ")} — δεν είναι σήματα, μετριούνται μόνο.`;
   if (C.missing.length) m += `\nΔεν υπολογίστηκαν: ${C.missing.map(s => s.replace("USDT", "")).join(", ")}`;
   m += `\nΠιθ. = πόσο πιστεύει το μοντέλο ότι χτυπιέται πρώτα το άνω επίπεδο (≤ ${(1 - THR).toFixed(2).replace(".", ",")} = ισχυρό short, ≥ ${THR.toFixed(2).replace(".", ",")} = ισχυρό long). Εκπαιδευτικό — όχι επενδυτική συμβουλή.`;
   return m.length > 1950 ? m.slice(0, 1940) + "\n…" : m;
 }
+// Διόρθωση #1 (20/11/2026) — ίδιο φίλτρο με το tgfix.js της σελίδας: όχι LONG όταν BTC σε πτωτική τάση (1D κλείσιμο < μέσο 20 ημ. που πέφτει),
+// πλήθος φορτωμένο long (funding 3ημ. ≥ 0,009% ή L/S λογ. ≥ 2,782 ή L/S top ≥ 3,213) και χωρίς ξεφόρτωμα OI (24ω ≤ −4% με πτώση) τις τελευταίες 72ω.
+async function fixGuard(T) {
+  try {
+    const H4 = 144e5, D1 = 864e5, q = "symbol=BTCUSDT&period=4h&limit=200";
+    const [fr, ls, tt, oi, k4, kd] = await Promise.all([j(`${API}/fapi/v1/fundingRate?symbol=BTCUSDT&limit=60`), j(`${API}/futures/data/globalLongShortAccountRatio?${q}`), j(`${API}/futures/data/topLongShortAccountRatio?${q}`), j(`${API}/futures/data/openInterestHist?${q}`), j(`${API}/fapi/v1/klines?symbol=BTCUSDT&interval=4h&limit=200`), j(`${API}/fapi/v1/klines?symbol=BTCUSDT&interval=1d&limit=60`)]);
+    const srt = a => a.sort((x, y) => x[0] - y[0]); const at = (a, t) => { let v = null; for (const x of a) { if (x[0] <= t) v = x; else break } return v };
+    const FR = srt(fr.map(x => [+x.fundingTime, +x.fundingRate])), LS = srt(ls.map(x => [+x.timestamp, +x.longShortRatio])), TT = srt(tt.map(x => [+x.timestamp, +x.longShortRatio])), OI = srt(oi.map(x => [+x.timestamp, +x.sumOpenInterest])), PX = srt(k4.map(k => [+k[0] + H4, +k[4]])), DD = srt(kd.map(k => [+k[0] + D1, +k[4]])).filter(x => x[0] <= T);
+    if (DD.length < 26) return null; const c = DD.map(x => x[1]), n = c.length, m = i => c.slice(i - 20, i).reduce((a, b) => a + b, 0) / 20; const down = c[n - 1] < m(n) && m(n) < m(n - 5);
+    const f = FR.filter(x => x[0] <= T).slice(-9); const fr3 = f.length >= 6 ? f.reduce((a, x) => a + x[1], 0) / f.length : NaN;
+    const l = at(LS, T - 1), t = at(TT, T - 1); const lsv = l && T - l[0] <= 2 * H4 ? l[1] : NaN, ttv = t && T - t[0] <= 2 * H4 ? t[1] : NaN;
+    const crowd = fr3 >= 0.000090 || lsv >= 2.782 || ttv >= 3.213;
+    let flush = false; for (const o of OI) { if (o[0] >= T || o[0] < T - 18 * H4) continue; const o0 = at(OI, o[0] - 6 * H4), p1 = at(PX, o[0]), p0 = at(PX, o[0] - 6 * H4); if (!o0 || !p1 || !p0 || o[0] - 6 * H4 - o0[0] > H4) continue; if (Math.log(o[1] / o0[1]) <= -0.0401 && Math.log(p1[1] / p0[1]) < 0) flush = true }
+    if (!flush) { // Διόρθωση #2: επιβεβαιωμένο γύρισμα με απότομο ξεφόρτωμα OI σε 15′ τις τελευταίες 24ω (ίδιο με tgfix.js)
+      const [o15, k15] = await Promise.all([j(`${API}/futures/data/openInterestHist?symbol=BTCUSDT&period=15m&limit=120`), j(`${API}/fapi/v1/klines?symbol=BTCUSDT&interval=15m&limit=130`)]);
+      const O = srt(o15.map(x => [+x.timestamp, +x.sumOpenInterest])).filter(x => x[0] <= T), K = srt(k15.map(x => [+x[0] + 9e5, +x[2], +x[3], +x[4]])).filter(x => x[0] <= T);
+      const kAt = t => { let v = -1; for (let i = 0; i < K.length; i++) { if (K[i][0] <= t) v = i; else break } return v };
+      for (let i = 4; i < O.length && !flush; i++) for (let w = 1; w <= 4; w++) { const d = Math.log(O[i][1] / O[i - w][1]); if (d > -0.015) continue; const ka = kAt(O[i - w][0]), kb = kAt(O[i][0]); if (ka < 0 || kb <= ka) continue; const p0 = K[ka][3]; if (!(K[kb][3] < p0)) continue;
+        let lo = Infinity; for (let x = ka; x <= kb; x++) lo = Math.min(lo, K[x][2]); for (let x = kb + 1; x <= Math.min(K.length - 1, kb + 8); x++) { lo = Math.min(lo, K[x][2]); if (K[x][3] >= lo + 0.5 * (p0 - lo)) { if (K[x][0] > T - 864e5) flush = true; break } } break }
+    }
+    return down && crowd && !flush;
+  } catch (e) { return null }
+}
+
 async function post(content) { if (DRY) { console.log("DRY>\n" + content); return } const r = await fetch(HOOK, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ content }) }); if (!r.ok) throw new Error("discord " + r.status) }
 
 (async () => {
@@ -74,6 +100,7 @@ async function post(content) { if (DRY) { console.log("DRY>\n" + content); retur
   const MODELS = await decryptModels(KEY); const M = MODELS[TF];
   const C = await compute(M);
   if (C.latest !== last) { console.log("model4h: τα δεδομένα δεν έχουν ακόμα το νέο κερί"); return }
+  C.block = await fixGuard(C.latest + MS);
   const msg = message(C, M);
   const n = Object.values(C.res[C.latest]).filter(r => r.sig).length;
   if (msg) await post(msg);
