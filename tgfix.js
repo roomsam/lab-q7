@@ -3,7 +3,7 @@
 // Το σήμα που κόβεται δεν σβήνει: φαίνεται «⛔ μπλοκ» με τον λόγο, και μετράμε ζωντανά και τις δύο εκδοχές
 // (με και χωρίς τη διόρθωση). Αν μια διόρθωση χάνει σε βάθος εβδομάδας, βγαίνει.
 //
-// Διόρθωση #1 (20/11/2026): κανένα LONG στα 4H / 4H+M / 1D όταν ταυτόχρονα
+// Διόρθωση #1 (20/11/2026): κανένα LONG στα 4H / 4H+M όταν ταυτόχρονα (το 1D μόνο μετριέται, δεν μπλοκάρεται)
 //   (α) το BTC είναι σε πτωτική τάση (ημερήσιο κλείσιμο κάτω από τον μέσο 20 ημερών, και ο μέσος πέφτει σε 5 μέρες),
 //   (β) το πλήθος στο BTC είναι φορτωμένο long (funding 3ημ. / L/S λογαριασμών / L/S top στο 95% του έτους — ίδια όρια με το «Γύρισμα αγοράς»),
 //   (γ) ΔΕΝ έχει γίνει ξεφόρτωμα OI (OI 24ω ≤ −4% με πτώση τιμής) τις τελευταίες 72 ώρες.
@@ -11,7 +11,7 @@
 //
 // Διόρθωση #2 (20/11/2026): «γύρισμα με απότομο OI». Σε 15′: το OI πέφτει απότομα (≤ 1 ώρα) ενώ πέφτει η τιμή = καθάρισμα longs.
 //   Αν μετά η τιμή ξαναπάρει ≥ 50% της πτώσης μέσα σε 2 ώρες (15′ κλείσιμο) → «🔄 γύρισμα επιβεβαιωμένο».
-//   Στο BTC το επιβεβαιωμένο γύρισμα (τελευταίες 24ω) μετράει ως ξεφόρτωμα για τη διόρθωση #1 → τα long ξεμπλοκάρουν πιο γρήγορα.
+//   ΜΟΝΟ ΜΕΤΡΗΣΗ: δεν ξεμπλοκάρει τα long της #1 (ούτε στη σελίδα ούτε στο Discord).
 //   Όρια αρχικά, χωρίς μέτρηση: OI ≤ −1,5% (BTC/ETH) ή ≤ −2,5% (υπόλοιπα) σε ≤ 4 κεριά 15′. Μετριούνται ζωντανά στο BTC (30 μέρες).
 (function(){
 "use strict";
@@ -19,7 +19,7 @@ const API="https://fapi.binance.com";
 const TH={fr_hi:0.000090,ls_hi:2.782,tt_hi:3.213,oi24_lo:-0.0401}; // = tgturn.js (14/11/2026)
 const H4=144e5,D1=864e5,FEE=8,LOOK=18;
 const FIXES=[
-  {id:1,date:"20/11/2026",tfs:["4h","4hm","1d"],title:"Όχι LONG σε πτωτική τάση με πλήθος φορτωμένο long",
+  {id:1,date:"20/11/2026",tfs:["4h","4hm"],measure:["1d"],title:"Όχι LONG σε πτωτική τάση με πλήθος φορτωμένο long",
    why:"20/11: 11 ισχυρά long του 1D μέσα σε πτώση, πλήθος φορτωμένο long, χωρίς ξεφόρτωμα OI → 6/11 stop την ίδια μέρα. Ίδιο μοτίβο με τις αγορές του 4H (1 στις 31)."},
   {id:2,date:"20/11/2026",tfs:[],title:"Γύρισμα με απότομο ξεφόρτωμα OI (15′)",
    why:"Το καθάρισμα (OI πέφτει απότομα με την τιμή και μετά η τιμή ξαναπαίρνει) συχνά σημαδεύει πάτο. Το 24ωρο ξεφόρτωμα της #1 έρχεται αργά· αυτό το πιάνει μέσα στην ώρα."}
@@ -96,18 +96,21 @@ function state(T){
     const o0=at(D.oi,o[0]-6*H4),p1=at(D.px,o[0]),p0=at(D.px,o[0]-6*H4);
     if(!o0||!p1||!p0||o[0]-6*H4-o0[0]>H4)continue;
     const dd=Math.log(o[1]/o0[1]),dp=Math.log(p1[1]/p0[1]);if(dd<=TH.oi24_lo&&dp<0)flush={t:o[0],d:dd}}
-  if(!flush){const bt=btcTurn24(T);if(bt)flush={t:bt.conf.t,d:bt.d,turn:true}}
   const ok=down!==null&&(fin(lsv)||fin(ttv))&&D.oi.length&&D.oi[0][0]<=T-LOOK*H4;
   return{T,ok,down,ma,fr3,ls:lsv,tt:ttv,crowd,flush};
 }
 // Μπλοκάρει το σήμα; T = ώρα κλεισίματος του κεριού του σήματος. Επιστρέφει {id,why} ή null.
 function block(tf,sig,T){
-  if(!(sig>0))return null;const fx=FIXES[0];if(!fx.tfs.includes(tf))return null;
+  const fx=FIXES[0];if(!fx.tfs.includes(tf))return null;return wouldBlock(sig,T);
+}
+// Ίδιος έλεγχος χωρίς τον περιορισμό TF — για τη μέτρηση (π.χ. 1D).
+function wouldBlock(sig,T){
+  if(!(sig>0))return null;
   const st=state(T);if(!st||!st.ok)return null;
   if(st.down&&st.crowd&&!st.flush)return{id:1,why:"πτωτική τάση BTC · πλήθος φορτωμένο long · χωρίς ξεφόρτωμα OI"};
   return null;
 }
-window.TGFIX={block,state,ready:()=>!!D,FIXES};
+window.TGFIX={block,wouldBlock,state,ready:()=>!!D,FIXES};
 
 // ---------- εμφάνιση: σημάδι «⛔ μπλοκ» πάνω στα σήματα της σελίδας (δεν αλλάζει τον υπολογισμό τους) ----------
 function curTF(){try{return cur}catch(e){return null}}
@@ -134,7 +137,7 @@ function st(X){const n=X.length;if(!n)return{n:0};let w=0,s=0;for(const h of X){
 const cellS=T=>T.n?`<td>${T.n}</td><td>${Math.round(T.win*100)}%</td><td class="${T.avg>=0?"up":"dn"}">${f1(T.avg)} bp</td><td class="${T.net>=0?"up":"dn"}">${Math.round(T.net)} bp</td>`:`<td>0</td><td>—</td><td>—</td><td>—</td>`;
 const tH=t=>new Date(t).toLocaleString("el-GR",{weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23",timeZone:"Europe/Athens"});
 function turnsPart(fx){
-  let h=`<div style="margin:14px 0 6px"><b>#${fx.id} · ${fx.date} · ${fx.title}</b><br><span class="sm mut">${fx.why} Όρια αρχικά, χωρίς μέτρηση: OI ≤ −1,5% (BTC/ETH) ή ≤ −2,5% (υπόλοιπα) σε ≤ 1 ώρα με πτώση τιμής · επιβεβαίωση = 15′ κλείσιμο που ξαναπαίρνει ≥ 50% της πτώσης μέσα σε 2 ώρες. Στο BTC το επιβεβαιωμένο γύρισμα ξεμπλοκάρει τα long της #1 για 24 ώρες.</span></div>`;
+  let h=`<div style="margin:14px 0 6px"><b>#${fx.id} · ${fx.date} · ${fx.title}</b><br><span class="sm mut">${fx.why} Όρια αρχικά, χωρίς μέτρηση: OI ≤ −1,5% (BTC/ETH) ή ≤ −2,5% (υπόλοιπα) σε ≤ 1 ώρα με πτώση τιμής · επιβεβαίωση = 15′ κλείσιμο που ξαναπαίρνει ≥ 50% της πτώσης μέσα σε 2 ώρες. <b>Μόνο μέτρηση</b>: δεν ξεμπλοκάρει τα long της #1.</span></div>`;
   if(!T2){return h+`<p class="sm mut">Φόρτωση 15′ OI…</p>`}
   const rows=[];for(const s in T2){const E=T2[s];if(!E||!E.length)continue;const e=E[E.length-1];if(Date.now()-(e.conf?e.conf.t:e.t)>6*36e5)continue;rows.push(e)}
   rows.sort((a,b)=>(b.conf?b.conf.t:b.t)-(a.conf?a.conf.t:a.t));
@@ -153,17 +156,17 @@ function render(){
   for(const fx of FIXES){
     if(fx.id===2){h+=turnsPart(fx);continue}
     const active=now&&now.ok&&now.down&&now.crowd&&!now.flush;
-    h+=`<div style="margin:6px 0"><b>#${fx.id} · ${fx.date} · ${fx.title}</b> <span class="pill ${active?"pdn":"pn"}">${active?"ενεργό τώρα":"ανενεργό τώρα"}</span><br><span class="sm mut">${fx.why} Ισχύει για: ${fx.tfs.map(t=>({"4h":"4H","4hm":"4H+M","1d":"1D"})[t]).join(", ")}.</span></div>`;
+    h+=`<div style="margin:6px 0"><b>#${fx.id} · ${fx.date} · ${fx.title}</b> <span class="pill ${active?"pdn":"pn"}">${active?"ενεργό τώρα":"ανενεργό τώρα"}</span><br><span class="sm mut">${fx.why} Μπλοκάρει: ${fx.tfs.map(t=>({"4h":"4H","4hm":"4H+M","1d":"1D"})[t]).join(", ")}${fx.measure?" · μόνο μέτρηση: "+fx.measure.map(t=>({"4h":"4H","4hm":"4H+M","1d":"1D"})[t]).join(", "):""}.</span></div>`;
     if(now)h+=`<div class="sm" style="margin:2px 0 8px">Τώρα: τάση BTC ${now.down===null?"—":now.down?'<b class="dn">πτωτική</b>':'<span class="up">όχι πτωτική</span>'} (μέσος 20 ημ. ${f1(now.ma)}) · πλήθος ${now.crowd?'<b class="dn">φορτωμένο long</b>':"όχι φορτωμένο"} (L/S ${fin(now.ls)?now.ls.toFixed(2).replace(".",","):"—"}, top ${fin(now.tt)?now.tt.toFixed(2).replace(".",","):"—"}) · ξεφόρτωμα OI 72ω ${now.flush?(now.flush.turn?'<span class="up">ναι · γύρισμα #2</span>':'<span class="up">ναι</span>'):"όχι"}</div>`;
     h+=`<div class="scroll"><table><tr><th>TF</th><th>Ομάδα</th><th>Ολοκλ.</th><th>Επιτυχία</th><th>Μέσο / σήμα</th><th>Καθαρό (−${FEE} bp)</th></tr>`;
     let any=false;
-    for(const tf of fx.tfs){const C=cacheOf(tf);if(!C||!C.hist)continue;any=true;const ms=msOf(tf);
+    for(const tf of fx.tfs.concat(fx.measure||[])){const C=cacheOf(tf);const meas=!fx.tfs.includes(tf);if(!C||!C.hist)continue;any=true;const ms=msOf(tf);
       const H=C.hist.filter(x=>x.o&&fin(x.o.r));const L=H.filter(x=>x.sig>0);
-      const B=[],K=[],U=[];for(const x of L){const s0=state(x.t+ms);if(!s0||!s0.ok){U.push(x);continue}(block(tf,x.sig,x.t+ms)?B:K).push(x)}
-      const keep=H.filter(x=>!B.includes(x));const lab={"4h":"4H","4hm":"4H+M","1d":"1D"}[tf];
+      const B=[],K=[],U=[];for(const x of L){const s0=state(x.t+ms);if(!s0||!s0.ok){U.push(x);continue}(wouldBlock(x.sig,x.t+ms)?B:K).push(x)}
+      const keep=H.filter(x=>!B.includes(x));const lab={"4h":"4H","4hm":"4H+M","1d":"1D"}[tf]+(meas?"<br><span class=\"sm mut\">μόνο μέτρηση</span>":"");
       h+=`<tr><td rowspan="4"><b>${lab}</b></td><td>Όλα τα σήματα · χωρίς διόρθωση</td>${cellS(st(H))}</tr>`+
-         `<tr><td><b>Όλα τα σήματα · με διόρθωση</b></td>${cellS(st(keep))}</tr>`+
-         `<tr><td>Long που μπλοκάρει</td>${cellS(st(B))}</tr>`+
+         `<tr><td><b>Όλα τα σήματα · με διόρθωση</b>${meas?" (αν ίσχυε)":""}</td>${cellS(st(keep))}</tr>`+
+         `<tr><td>Long που ${meas?"θα μπλόκαρε":"μπλοκάρει"}</td>${cellS(st(B))}</tr>`+
          `<tr><td>Long που αφήνει</td>${cellS(st(K))}</tr>`;
       if(U.length)h+=`<tr><td></td><td colspan="5" class="sm mut">${U.length} παλιά long χωρίς δεδομένα πλήθους (η Binance κρατά ~30 μέρες L/S) — εκτός μέτρησης</td></tr>`}
     if(!any)h+=`<tr><td colspan="6" class="sm mut">Άνοιξε μία φορά το 4H, το 4H+M και το 1D για να φορτωθεί η μέτρηση.</td></tr>`;
