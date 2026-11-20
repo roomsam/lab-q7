@@ -76,13 +76,7 @@ async function fixGuard(T) {
     const l = at(LS, T - 1), t = at(TT, T - 1); const lsv = l && T - l[0] <= 2 * H4 ? l[1] : NaN, ttv = t && T - t[0] <= 2 * H4 ? t[1] : NaN;
     const crowd = fr3 >= 0.000090 || lsv >= 2.782 || ttv >= 3.213;
     let flush = false; for (const o of OI) { if (o[0] >= T || o[0] < T - 18 * H4) continue; const o0 = at(OI, o[0] - 6 * H4), p1 = at(PX, o[0]), p0 = at(PX, o[0] - 6 * H4); if (!o0 || !p1 || !p0 || o[0] - 6 * H4 - o0[0] > H4) continue; if (Math.log(o[1] / o0[1]) <= -0.0401 && Math.log(p1[1] / p0[1]) < 0) flush = true }
-    if (!flush) { // Διόρθωση #2: επιβεβαιωμένο γύρισμα με απότομο ξεφόρτωμα OI σε 15′ τις τελευταίες 24ω (ίδιο με tgfix.js)
-      const [o15, k15] = await Promise.all([j(`${API}/futures/data/openInterestHist?symbol=BTCUSDT&period=15m&limit=120`), j(`${API}/fapi/v1/klines?symbol=BTCUSDT&interval=15m&limit=130`)]);
-      const O = srt(o15.map(x => [+x.timestamp, +x.sumOpenInterest])).filter(x => x[0] <= T), K = srt(k15.map(x => [+x[0] + 9e5, +x[2], +x[3], +x[4]])).filter(x => x[0] <= T);
-      const kAt = t => { let v = -1; for (let i = 0; i < K.length; i++) { if (K[i][0] <= t) v = i; else break } return v };
-      for (let i = 4; i < O.length && !flush; i++) for (let w = 1; w <= 4; w++) { const d = Math.log(O[i][1] / O[i - w][1]); if (d > -0.015) continue; const ka = kAt(O[i - w][0]), kb = kAt(O[i][0]); if (ka < 0 || kb <= ka) continue; const p0 = K[ka][3]; if (!(K[kb][3] < p0)) continue;
-        let lo = Infinity; for (let x = ka; x <= kb; x++) lo = Math.min(lo, K[x][2]); for (let x = kb + 1; x <= Math.min(K.length - 1, kb + 8); x++) { lo = Math.min(lo, K[x][2]); if (K[x][3] >= lo + 0.5 * (p0 - lo)) { if (K[x][0] > T - 864e5) flush = true; break } } break }
-    }
+    // Διόρθωση #2 (γύρισμα 15′ με απότομο OI): μόνο μέτρηση στη σελίδα — ΔΕΝ ξεμπλοκάρει εδώ.
     return down && crowd && !flush;
   } catch (e) { return null }
 }
